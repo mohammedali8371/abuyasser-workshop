@@ -1,0 +1,131 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}مدفوعات الطلب #{{ order.id }}{% endblock %}
+{% block page_title %}مدفوعات الطلب #{{ order.id }}{% endblock %}
+{% block nav_orders %}active{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="admin-card mb-4">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-receipt me-2"></i>معلومات الطلب</h6>
+                <a href="/admin/orders/{{ order.id }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة لتفاصيل الطلب
+                </a>
+            </div>
+            <div class="card-body-custom">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block mb-1">رقم الطلب</small>
+                        <strong>#{{ order.id }}</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block mb-1">العميل</small>
+                        <strong>{{ order.customer_name | default(order.user_name | default('—')) }}</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block mb-1">التاريخ</small>
+                        <strong>{{ order.created_at | default('') }}</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block mb-1">الحالة</small>
+                        {% set status_labels = {
+                            'pending': 'قيد الانتظار',
+                            'confirmed': 'تم التأكيد',
+                            'processing': 'قيد التنفيذ',
+                            'shipped': 'تم الشحن',
+                            'completed': 'مكتمل',
+                            'cancelled': 'ملغي'
+                        } %}
+                        <span class="badge badge-status bg-{{ order.status | default('secondary') }}">
+                            {{ status_labels.get(order.status | default('pending'), order.status) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card mb-4">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-clock-history me-2"></i>سجل المدفوعات</h6>
+                <span class="badge bg-primary" style="border-radius:6px;">{{ payments | length }} دفعة</span>
+            </div>
+            <div class="card-body-custom p-0">
+                {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-admin">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>التاريخ</th>
+                                <th>المبلغ</th>
+                                <th>ملاحظة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in payments %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ p.created_at | default(p.date | default('')) }}</td>
+                                <td><strong class="text-success">{{ p.amount }} ر.س</strong></td>
+                                <td>{{ p.note | default('—') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-wallet2"></i>
+                    <p>لا توجد مدفوعات مسجلة لهذا الطلب</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="admin-card mb-4">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-calculator me-2"></i>ملخص المدفوعات</h6>
+            </div>
+            <div class="card-body-custom">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid #f0f0f0;">
+                    <span class="text-muted">المبلغ الكلي</span>
+                    <strong style="font-size:1.1rem;">{{ order.total | default(0) }} ر.س</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid #f0f0f0;">
+                    <span class="text-muted">المبلغ المدفوع</span>
+                    <strong style="font-size:1.1rem; color:#198754;">{{ total_paid | default(0) }} ر.س</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">المتبقي</span>
+                    <strong style="font-size:1.1rem; color:#dc3545;">{{ remaining | default(order.total | default(0)) }} ر.س</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-plus-circle me-2"></i>تسجيل دفعة جديدة</h6>
+            </div>
+            <div class="card-body-custom">
+                <form method="POST" action="/admin/orders/{{ order.id }}/payments/add">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المبلغ <span class="text-danger">*</span></label>
+                        <input type="number" name="amount" class="form-control" step="0.01" min="0.01" max="{{ remaining | default(order.total | default(0)) }}" placeholder="أدخل المبلغ" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظة</label>
+                        <textarea name="note" class="form-control" rows="3" placeholder="ملاحظة اختيارية..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-2"></i>تسجيل الدفعة
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+﻿{% extends "admin/admin_base.html" %}
+
+{% block title %}الإشعارات{% endblock %}
+{% block nav_notifications %}active{% endblock %}
+{% block page_title %}إدارة الإشعارات{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="admin-card">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-send ms-2"></i>إرسال إشعار</h6>
+            </div>
+            <div class="card-body-custom">
+                <form action="/admin/notifications/send" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">المستخدم *</label>
+                        <select name="user_id" class="form-select" required>
+                            <option value="">اختر مستخدماً</option>
+                            {% if notif_users %}
+                            {% for uid, u in notif_users.items() %}
+                            <option value="{{ uid }}">{{ u.name }} ({{ u.email }})</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">العنوان *</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">النص *</label>
+                        <textarea name="body" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">الرابط</label>
+                        <input type="text" name="link" class="form-control" placeholder="/...">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-send ms-2"></i>إرسال الإشعار
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-bell ms-2"></i>الإشعارات المرسلة</h6>
+                <span class="text-muted">الإجمالي: {{ notifications|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-admin mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th>المستخدم</th>
+                            <th>العنوان</th>
+                            <th>النص</th>
+                            <th>الحالة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for n in notifications %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if notif_users and n.user_id in notif_users %}
+                                <span>{{ notif_users[n.user_id].name }}</span>
+                                {% else %}
+                                <span class="text-muted">مستخدم #{{ n.user_id }}</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ n.title }}</strong></td>
+                            <td><span class="text-muted">{{ n.body|truncate(60) if n.body else '—' }}</span></td>
+                            <td>
+                                {% if n.is_read %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">مقروء</span>
+                                {% else %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary">غير مقروء</span>
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ n.created_at }}</small></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not notifications %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="bi bi-bell-slash"></i>
+                                    <p>لا توجد إشعارات بعد</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

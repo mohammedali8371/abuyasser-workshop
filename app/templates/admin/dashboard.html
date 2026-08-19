@@ -1,0 +1,181 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}لوحة التحكم{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block page_title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.total_customers }}</div>
+                    <div class="stat-label">عدد العملاء</div>
+                </div>
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.total_products }}</div>
+                    <div class="stat-label">عدد المنتجات</div>
+                </div>
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.total_orders }}</div>
+                    <div class="stat-label">عدد الطلبات</div>
+                </div>
+                <div class="stat-icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-receipt-cutoff"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.new_orders }}</div>
+                    <div class="stat-label">الطلبات الجديدة</div>
+                </div>
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.in_progress_orders }}</div>
+                    <div class="stat-label">قيد التنفيذ</div>
+                </div>
+                <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
+                    <i class="bi bi-arrow-repeat"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.completed_orders }}</div>
+                    <div class="stat-label">المكتملة</div>
+                </div>
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.avg_rating }}</div>
+                    <div class="stat-label">متوسط التقييم</div>
+                </div>
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-value">{{ stats.total_reviews }}</div>
+                    <div class="stat-label">عدد التقييمات</div>
+                </div>
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-chat-square-heart-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders -->
+<div class="admin-card">
+    <div class="card-header-custom">
+        <h6><i class="bi bi-receipt-cutoff ms-2"></i>آخر الطلبات</h6>
+        <a href="/admin/orders" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>رقم الطلب</th>
+                    <th>العميل</th>
+                    <th>المجموع</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in recent_orders %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ o.order_number }}</strong></td>
+                    <td>{{ o.customer_name if o.customer_name else 'غير معروف' }}</td>
+                    <td>{{ o.total }} ر.س</td>
+                    <td>
+                        {% if o.status == 'new' %}
+                            <span class="badge-status bg-primary">جديد</span>
+                        {% elif o.status == 'reviewing' %}
+                            <span class="badge-status bg-info">قيد المراجعة</span>
+                        {% elif o.status == 'accepted' %}
+                            <span class="badge-status bg-success">مقبول</span>
+                        {% elif o.status == 'in_progress' %}
+                            <span class="badge-status bg-warning text-dark">قيد التنفيذ</span>
+                        {% elif o.status == 'ready' %}
+                            <span class="badge-status bg-success">جاهز</span>
+                        {% elif o.status == 'completed' %}
+                            <span class="badge-status bg-dark">مكتمل</span>
+                        {% elif o.status == 'cancelled' %}
+                            <span class="badge-status bg-danger">ملغي</span>
+                        {% else %}
+                            <span class="badge-status bg-secondary">{{ o.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ o.created_at }}</td>
+                    <td>
+                        <a href="/admin/orders/{{ o.id }}" class="btn btn-sm btn-outline-primary" title="تفاصيل">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not recent_orders %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">لا توجد طلبات حتى الآن</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

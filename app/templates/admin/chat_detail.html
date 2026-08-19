@@ -1,0 +1,109 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}محادثة{% endblock %}
+{% block nav_chats %}active{% endblock %}
+{% block page_title %}محادثة مع {{ customer.name if customer else 'عميل' }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="/admin/chats" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-right ms-1"></i>العودة للمحادثات
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-chat-dots ms-2"></i>الرسائل</h6>
+                {% if chat.is_active is defined and chat.is_active %}
+                <span class="badge bg-success bg-opacity-10 text-success">نشطة</span>
+                {% else %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary">مغلقة</span>
+                {% endif %}
+            </div>
+            <div class="card-body-custom">
+                <!-- Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    {% for msg in messages %}
+                    <div class="chat-msg {% if msg.sender_id == user.id %}sent{% else %}received{% endif %}">
+                        <div class="chat-bubble">
+                            <p class="mb-1">{{ msg.text if msg.text else msg.content if msg.content else '' }}</p>
+                            <small>{{ msg.created_at }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if not messages %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-chat-dots" style="font-size:2rem;"></i>
+                        <p class="mt-2">لا توجد رسائل بعد</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Message Input -->
+                {% if chat.is_active is defined and chat.is_active %}
+                <form action="/admin/chats/{{ chat.id }}/send" method="post" class="mt-3">
+                    <div class="input-group">
+                        <input type="text" name="text" class="form-control" placeholder="اكتب رسالتك..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send ms-1"></i>إرسال
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-secondary text-center mt-3 mb-0" style="border-radius:10px;">
+                    <i class="bi bi-lock ms-1"></i>المحادثة مغلقة
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Sidebar -->
+    <div class="col-lg-4">
+        <div class="admin-card mb-4">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-person ms-2"></i>معلومات العميل</h6>
+            </div>
+            <div class="card-body-custom text-center">
+                {% if customer %}
+                <div class="user-avatar mx-auto mb-3" style="width:64px; height:64px; font-size:1.5rem; background:#0d6efd; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                    {{ customer.name[0] if customer.name else 'ع' }}
+                </div>
+                <h6 class="mb-1">{{ customer.name }}</h6>
+                <small class="text-muted d-block mb-1">{{ customer.email }}</small>
+                {% if customer.phone %}
+                <small class="text-muted d-block"><i class="bi bi-telephone ms-1"></i>{{ customer.phone }}</small>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">عميل غير معروف</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Close Chat -->
+        {% if chat.is_active is defined and chat.is_active %}
+        <div class="admin-card">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-gear ms-2"></i>إدارة</h6>
+            </div>
+            <div class="card-body-custom">
+                <form action="/admin/chats/{{ chat.id }}/close" method="post" onsubmit="return confirmDelete('هل أنت متأكد من إغلاق المحادثة؟')">
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-x-circle ms-2"></i>إغلاق المحادثة
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var chatBox = document.getElementById('chatMessages');
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+</script>
+{% endblock %}

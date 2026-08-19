@@ -1,0 +1,106 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}الطلبات{% endblock %}
+{% block nav_orders %}active{% endblock %}
+{% block page_title %}إدارة الطلبات{% endblock %}
+
+{% block content %}
+<!-- Status Filter Tabs -->
+<div class="filter-tabs">
+    <a href="/admin/orders" class="btn {% if not selected_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">الكل</a>
+    <a href="/admin/orders?status=new" class="btn {% if selected_status == 'new' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        جديد
+    </a>
+    <a href="/admin/orders?status=reviewing" class="btn {% if selected_status == 'reviewing' %}btn-info{% else %}btn-outline-secondary{% endif %}">
+        قيد المراجعة
+    </a>
+    <a href="/admin/orders?status=accepted" class="btn {% if selected_status == 'accepted' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+        مقبول
+    </a>
+    <a href="/admin/orders?status=in_progress" class="btn {% if selected_status == 'in_progress' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+        قيد التنفيذ
+    </a>
+    <a href="/admin/orders?status=ready" class="btn {% if selected_status == 'ready' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+        جاهز
+    </a>
+    <a href="/admin/orders?status=completed" class="btn {% if selected_status == 'completed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        مكتمل
+    </a>
+    <a href="/admin/orders?status=cancelled" class="btn {% if selected_status == 'cancelled' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+        ملغي
+    </a>
+</div>
+
+<div class="admin-card">
+    <div class="card-header-custom">
+        <h6><i class="bi bi-receipt-cutoff ms-2"></i>
+            {% if selected_status %}
+                الطلبات: {{ selected_status }}
+            {% else %}
+                جميع الطلبات
+            {% endif %}
+        </h6>
+        <span class="text-muted">الإجمالي: {{ orders|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>رقم الطلب</th>
+                    <th>العميل</th>
+                    <th>المجموع</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ o.order_number }}</strong></td>
+                    <td>{{ o.customer_name if o.customer_name else 'غير معروف' }}</td>
+                    <td><strong>{{ o.total }} ر.س</strong></td>
+                    <td>
+                        {% if o.status == 'new' %}
+                            <span class="badge-status bg-primary">جديد</span>
+                        {% elif o.status == 'reviewing' %}
+                            <span class="badge-status bg-info">قيد المراجعة</span>
+                        {% elif o.status == 'accepted' %}
+                            <span class="badge-status bg-success">مقبول</span>
+                        {% elif o.status == 'in_progress' %}
+                            <span class="badge-status bg-warning text-dark">قيد التنفيذ</span>
+                        {% elif o.status == 'ready' %}
+                            <span class="badge-status bg-success">جاهز</span>
+                        {% elif o.status == 'completed' %}
+                            <span class="badge-status bg-dark">مكتمل</span>
+                        {% elif o.status == 'cancelled' %}
+                            <span class="badge-status bg-danger">ملغي</span>
+                        {% else %}
+                            <span class="badge-status bg-secondary">{{ o.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ o.created_at }}</td>
+                    <td>
+                        <a href="/admin/orders/{{ o.id }}" class="btn btn-sm btn-outline-primary" title="تفاصيل">
+                            <i class="bi bi-eye"></i> تفاصيل
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not orders %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="bi bi-receipt-cutoff"></i>
+                            <p>لا توجد طلبات{% if selected_status %} بهذه الحالة{% endif %}</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

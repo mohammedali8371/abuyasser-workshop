@@ -1,0 +1,221 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}المنتجات{% endblock %}
+{% block nav_products %}active{% endblock %}
+{% block page_title %}إدارة المنتجات{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <span class="text-muted">إجمالي المنتجات: <strong>{{ products|length }}</strong></span>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <i class="bi bi-plus-lg ms-2"></i>إضافة منتج
+    </button>
+</div>
+
+<div class="admin-card">
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>الصورة</th>
+                    <th>الاسم</th>
+                    <th>السعر</th>
+                    <th>القسم</th>
+                    <th>المخزون</th>
+                    <th>التوفر</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        {% if p.image %}
+                        <img src="/{{ p.image }}" alt="{{ p.name }}" class="rounded" style="width:50px; height:50px; object-fit:cover;">
+                        {% else %}
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                            <i class="bi bi-image text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>{{ p.price }} ر.س</td>
+                    <td>{{ p.category_name if p.category_name else '—' }}</td>
+                    <td>
+                        {% if p.stock is defined %}
+                        <span class="{% if p.stock <= 0 %}text-danger{% elif p.stock <= 5 %}text-warning{% endif %}">{{ p.stock }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if p.is_available %}
+                        <span class="badge bg-success bg-opacity-10 text-success">متوفر</span>
+                        {% else %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger">غير متوفر</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary ms-1" data-bs-toggle="modal"
+                            onclick="editProduct('{{ p.id }}','{{ p.name }}','{{ p.description|default('',true)|e }}','{{ p.price }}','{{ p.category_id|default('',true) }}','{{ p.stock|default(0,true) }}','{{ p.is_available|default(true,true) }}','/{{ p.image|default('',true) }}')"
+                            title="تعديل">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form action="/admin/products/{{ p.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا المنتج؟')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not products %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="bi bi-box-seam"></i>
+                            <p>لا توجد منتجات بعد</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle ms-2"></i>إضافة منتج جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/products/add" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">اسم المنتج *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">السعر (ر.س) *</label>
+                            <input type="number" name="price" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">الوصف</label>
+                            <textarea name="description" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">القسم</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">بدون قسم</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">المخزون</label>
+                            <input type="number" name="stock" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">صورة المنتج</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_available" value="1" checked id="addAvail">
+                                <label class="form-check-label" for="addAvail">متوفر للبيع</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg ms-2"></i>إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square ms-2"></i>تعديل المنتج</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editProductForm" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">اسم المنتج *</label>
+                            <input type="text" name="name" id="edit_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">السعر (ر.س) *</label>
+                            <input type="number" name="price" id="edit_price" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">الوصف</label>
+                            <textarea name="description" id="edit_description" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">القسم</label>
+                            <select name="category_id" id="edit_category" class="form-select">
+                                <option value="">بدون قسم</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">المخزون</label>
+                            <input type="number" name="stock" id="edit_stock" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">صورة جديدة (اترك فارغاً للاحتفاظ بالحالية)</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_available" id="edit_available" value="1">
+                                <label class="form-check-label" for="edit_available">متوفر للبيع</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg ms-2"></i>حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editProduct(id, name, desc, price, catId, stock, available, img) {
+    document.getElementById('editProductForm').action = '/admin/products/' + id + '/edit';
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_description').value = desc;
+    document.getElementById('edit_price').value = price;
+    document.getElementById('edit_stock').value = stock;
+    document.getElementById('edit_available').checked = (available === 'True' || available === '1' || available === 'true');
+    var sel = document.getElementById('edit_category');
+    for (var i = 0; i < sel.options.length; i++) {
+        sel.options[i].selected = (sel.options[i].value === catId);
+    }
+    var modal = new bootstrap.Modal(document.getElementById('editProductModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

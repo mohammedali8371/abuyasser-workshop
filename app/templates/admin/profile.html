@@ -1,0 +1,44 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}الملف الشخصي{% endblock %}
+{% block page_title %}الملف الشخصي{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="card-header-custom">
+                <h6><i class="bi bi-person-gear me-2"></i>تعديل البيانات الشخصية</h6>
+            </div>
+            <div class="card-body-custom">
+                <form method="POST" action="/admin/profile/update">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الاسم الكامل <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" value="{{ user.name | default('') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">رقم الجوال <span class="text-danger">*</span></label>
+                            <input type="tel" name="phone" class="form-control" value="{{ user.phone | default('') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">البريد الإلكتروني</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email | default('') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">كلمة المرور الجديدة</label>
+                            <input type="password" name="new_password" class="form-control" placeholder="اتركها فارغة لعدم التغيير">
+                        </div>
+                        <div class="col-12">
+                            <hr>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-lg me-2"></i>حفظ التعديلات
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

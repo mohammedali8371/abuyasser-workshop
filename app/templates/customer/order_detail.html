@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل الطلب #{{ order.id }} — ورشة أبو ياسر الصرماح</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #e94560;
+            --warm: #f5a623;
+            --dark: #0f0f1a;
+            --card-bg: #1e1e32;
+            --text-light: #e8e8e8;
+            --text-muted-light: #a0a0b8;
+            --border-color: #2a2a40;
+        }
+        * { font-family: 'Cairo', sans-serif; }
+        body { background: var(--dark); color: var(--text-light); }
+        .navbar-custom {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.8rem 0;
+        }
+        .navbar-custom .navbar-brand { color: var(--warm); font-weight: 900; font-size: 1.4rem; }
+        .navbar-custom .nav-link { color: var(--text-light); font-weight: 600; transition: color 0.3s; padding: 0.5rem 1rem; }
+        .navbar-custom .nav-link:hover { color: var(--accent); }
+        .page-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 5rem 0 2rem;
+        }
+        .info-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .btn-accent {
+            background: var(--accent); color: #fff; border: none;
+            padding: 0.7rem 2rem; border-radius: 12px; font-weight: 700; transition: all 0.3s;
+        }
+        .btn-accent:hover { background: #d63550; color: #fff; transform: translateY(-2px); }
+        .btn-warm {
+            background: var(--warm); color: var(--dark); border: none;
+            padding: 0.6rem 1.5rem; border-radius: 12px; font-weight: 700; transition: all 0.3s;
+        }
+        .btn-warm:hover { background: #e09520; color: var(--dark); }
+        .btn-outline-light-custom {
+            border: 1px solid var(--border-color); color: var(--text-light); background: transparent;
+            padding: 0.6rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.3s;
+        }
+        .btn-outline-light-custom:hover { border-color: var(--accent); color: var(--accent); background: rgba(233,69,96,0.08); }
+        .status-pending { background: #f39c12; color: #000; }
+        .status-confirmed { background: #3498db; color: #fff; }
+        .status-processing { background: #9b59b6; color: #fff; }
+        .status-shipped { background: #2ecc71; color: #fff; }
+        .status-completed { background: #27ae60; color: #fff; }
+        .status-cancelled { background: var(--accent); color: #fff; }
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-custom thead th {
+            background: var(--secondary);
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 0.8rem 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .table-custom tbody td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-light);
+            vertical-align: middle;
+        }
+        .table-custom tbody tr:hover { background: rgba(255,255,255,0.03); }
+        .summary-card {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .summary-row:last-child { border-bottom: none; }
+        .summary-row .label { color: var(--text-muted-light); font-weight: 600; }
+        .summary-row .value { color: var(--text-light); font-weight: 700; font-size: 1.1rem; }
+        .summary-row.total .value { color: var(--warm); font-size: 1.3rem; }
+        .footer-custom {
+            background: var(--primary); border-top: 1px solid var(--border-color);
+            padding: 3rem 0 1.5rem; margin-top: 4rem;
+        }
+        .footer-custom h6 { color: var(--warm); font-weight: 700; margin-bottom: 1rem; }
+        .footer-custom a { color: var(--text-muted-light); text-decoration: none; }
+        .footer-custom a:hover { color: var(--accent); }
+        .footer-custom p { color: var(--text-muted-light); margin-bottom: 0.5rem; }
+        .footer-bottom {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem; margin-top: 2rem; text-align: center;
+            color: var(--text-muted-light); font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/customer/">
+                <i class="bi bi-wrench-adjustable-circle-fill me-2"></i>ورشة أبو ياسر الصرماح
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <i class="bi bi-list text-white fs-4"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/products">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>المنتجات
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/profile">
+                            <i class="bi bi-person-circle me-1"></i>حسابي
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/logout">
+                            <i class="bi bi-box-arrow-left me-1"></i>تسجيل الخروج
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header" style="margin-top: 70px;">
+        <div class="container">
+            <h1 style="font-weight:900;"><i class="bi bi-receipt me-2"></i>تفاصيل الطلب #{{ order.id }}</h1>
+            <p style="color:var(--text-muted-light);">
+                <i class="bi bi-calendar3 me-1"></i>{{ order.created_at | default('') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="info-box mb-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+                        <h5 style="font-weight:700; margin:0;">
+                            <i class="bi bi-bag-check me-2" style="color:var(--warm);"></i>أصناف الطلب
+                        </h5>
+                        {% set status_labels = {
+                            'pending': 'قيد الانتظار',
+                            'confirmed': 'تم التأكيد',
+                            'processing': 'قيد التنفيذ',
+                            'shipped': 'تم الشحن',
+                            'completed': 'مكتمل',
+                            'cancelled': 'ملغي'
+                        } %}
+                        <span class="badge status-{{ order.status | default('pending') }}" style="padding:0.5rem 1rem; font-size:0.85rem; border-radius:50px;">
+                            {{ status_labels.get(order.status | default('pending'), order.status) }}
+                        </span>
+                    </div>
+
+                    {% if items %}
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>المنتج</th>
+                                    <th>الكمية</th>
+                                    <th>السعر</th>
+                                    <th>المجموع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td style="font-weight:600;">{{ item.product_name | default(item.name | default('')) }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.price }} ر.س</td>
+                                    <td style="font-weight:700; color:var(--warm);">{{ (item.price * item.quantity) | round(2) }} ر.س</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox" style="font-size:2.5rem; color:var(--text-muted-light);"></i>
+                        <p class="mt-2" style="color:var(--text-muted-light);">لا توجد أصناف في هذا الطلب</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if payments %}
+                <div class="info-box">
+                    <h5 style="font-weight:700; margin-bottom:1rem;">
+                        <i class="bi bi-clock-history me-2" style="color:var(--warm);"></i>سجل المدفوعات
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>التاريخ</th>
+                                    <th>المبلغ</th>
+                                    <th>ملاحظة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in payments %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ p.created_at | default(p.date | default('')) }}</td>
+                                    <td style="font-weight:700; color:var(--warm);">{{ p.amount }} ر.س</td>
+                                    <td style="color:var(--text-muted-light);">{{ p.note | default('—') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-lg-4">
+                <div class="summary-card mb-4">
+                    <h5 style="font-weight:700; margin-bottom:1rem; color:#fff;">
+                        <i class="bi bi-calculator me-2" style="color:var(--warm);"></i>ملخص الطلب
+                    </h5>
+                    <div class="summary-row total">
+                        <span class="label">المبلغ الكلي</span>
+                        <span class="value">{{ order.total | default(0) }} ر.س</span>
+                    </div>
+
+                    {% if order.is_installment %}
+                    <div class="summary-row">
+                        <span class="label">المبلغ المدفوع</span>
+                        <span class="value" style="color:#2ecc71;">{{ order.paid_amount | default(0) }} ر.س</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="label">المتبقي</span>
+                        <span class="value" style="color:var(--accent);">{{ order.remaining | default(order.total | default(0)) }} ر.س</span>
+                    </div>
+                    <div style="margin-top:0.5rem;">
+                        <span class="badge" style="background:rgba(233,69,96,0.15); color:var(--accent); padding:0.4rem 0.8rem; border-radius:50px; font-size:0.8rem;">
+                            <i class="bi bi-credit-card me-1"></i>طلب تقسيط
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="info-box text-center">
+                    <a href="/customer/profile" class="btn btn-warm w-100">
+                        <i class="bi bi-arrow-right me-2"></i>العودة للملف الشخصي
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer-custom">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h6><i class="bi bi-wrench-adjustable-circle-fill me-2"></i>ورشة أبو ياسر الصرماح</h6>
+                    <p>ورشة متخصصة في أفضل المنتجات والخدمات.</p>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <h6>روابط سريعة</h6>
+                    <a href="/customer/" class="d-block mb-2">الرئيسية</a>
+                    <a href="/customer/products" class="d-block mb-2">المنتجات</a>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <h6>تواصل معنا</h6>
+                    <p><i class="bi bi-telephone-fill me-2"></i>05XXXXXXXX</p>
+                    <p><i class="bi bi-envelope-fill me-2"></i>info@workshop.com</p>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <h6>ساعات العمل</h6>
+                    <p><i class="bi bi-clock-fill me-2"></i>السبت - الخميس: 9 ص - 9 م</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="mb-0">&copy; 2026 ورشة أبو ياسر الصرماح. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

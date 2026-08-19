@@ -1,0 +1,89 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}الإعدادات{% endblock %}
+{% block nav_settings %}active{% endblock %}
+{% block page_title %}إعدادات الموقع{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form action="/admin/settings" method="post">
+            <!-- Workshop Info -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-shop ms-2"></i>معلومات الورشة</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">اسم الورشة</label>
+                            <input type="text" name="workshop_name" class="form-control" value="{{ settings.get('workshop_name', '')|fromjson if settings.get('workshop_name') else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">هاتف الورشة</label>
+                            <input type="text" name="workshop_phone" class="form-control" value="{{ settings.get('workshop_phone', '')|fromjson if settings.get('workshop_phone') else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">الموقع</label>
+                            <input type="text" name="workshop_location" class="form-control" value="{{ settings.get('workshop_location', '')|fromjson if settings.get('workshop_location') else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">ساعات العمل</label>
+                            <input type="text" name="workshop_hours" class="form-control" value="{{ settings.get('workshop_hours', '')|fromjson if settings.get('workshop_hours') else '' }}" placeholder="مثال: 8 صباحاً - 10 مساءً">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">وصف الورشة</label>
+                            <textarea name="workshop_description" class="form-control" rows="3">{{ settings.get('workshop_description', '')|fromjson if settings.get('workshop_description') else '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">رسالة الترحيب</label>
+                            <textarea name="welcome_message" class="form-control" rows="2">{{ settings.get('welcome_message', '')|fromjson if settings.get('welcome_message') else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Media -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-share-fill ms-2"></i>وسائل التواصل الاجتماعي</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-facebook text-primary ms-1"></i>فيسبوك
+                            </label>
+                            <input type="url" name="facebook" class="form-control" value="{{ settings.get('facebook', '')|fromjson if settings.get('facebook') else '' }}" placeholder="رابط صفحة فيسبوك">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-twitter-x ms-1"></i>تويتر / X
+                            </label>
+                            <input type="url" name="twitter" class="form-control" value="{{ settings.get('twitter', '')|fromjson if settings.get('twitter') else '' }}" placeholder="رابط حساب تويتر">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-instagram text-danger ms-1"></i>إنستغرام
+                            </label>
+                            <input type="url" name="instagram" class="form-control" value="{{ settings.get('instagram', '')|fromjson if settings.get('instagram') else '' }}" placeholder="رابط حساب إنستغرام">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-whatsapp text-success ms-1"></i>واتساب
+                            </label>
+                            <input type="text" name="whatsapp" class="form-control" value="{{ settings.get('whatsapp', '')|fromjson if settings.get('whatsapp') else '' }}" placeholder="رقم الواتساب مع رمز الدولة">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-circle ms-2"></i>حفظ الإعدادات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

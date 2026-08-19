@@ -1,0 +1,80 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}المحادثات{% endblock %}
+{% block nav_chats %}active{% endblock %}
+{% block page_title %}المحادثات النشطة{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="card-header-custom">
+        <h6><i class="bi bi-chat-dots-fill ms-2"></i>المحادثات</h6>
+        <span class="text-muted">الإجمالي: {{ chats|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>العميل</th>
+                    <th>الحالة</th>
+                    <th>آخر رسالة</th>
+                    <th>التاريخ</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in chats %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            {% if chat_users and c.id in chat_users and chat_users[c.id] %}
+                            <div class="user-avatar me-2" style="width:32px; height:32px; font-size:0.75rem; background:#0d6efd; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                {{ chat_users[c.id].name[0] if chat_users[c.id].name else 'ع' }}
+                            </div>
+                            <div>
+                                <strong>{{ chat_users[c.id].name }}</strong>
+                                <br><small class="text-muted">{{ chat_users[c.id].email }}</small>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">عميل #{{ c.user_id if c.user_id else c.id }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if c.is_active is defined and c.is_active %}
+                        <span class="badge bg-success bg-opacity-10 text-success">نشطة</span>
+                        {% elif c.is_active is defined and not c.is_active %}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary">مغلقة</span>
+                        {% else %}
+                        <span class="badge bg-success bg-opacity-10 text-success">نشطة</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="text-muted" style="font-size:0.85rem;">
+                            {{ c.last_message|truncate(50) if c.last_message else '—' }}
+                        </span>
+                    </td>
+                    <td>{{ c.created_at }}</td>
+                    <td>
+                        <a href="/admin/chats/{{ c.id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-left ms-1"></i>فتح
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not chats %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-chat-dots"></i>
+                            <p>لا توجد محادثات نشطة</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

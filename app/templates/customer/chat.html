@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحادثة — ورشة أبو ياسر الصرماح</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #e94560;
+            --warm: #f5a623;
+            --dark: #0f0f1a;
+            --card-bg: #1e1e32;
+            --text-light: #e8e8e8;
+            --text-muted-light: #a0a0b8;
+            --border-color: #2a2a40;
+        }
+        * { font-family: 'Cairo', sans-serif; }
+        body { background: var(--dark); color: var(--text-light); height: 100vh; display: flex; flex-direction: column; }
+        .navbar-custom {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.6rem 0;
+            flex-shrink: 0;
+        }
+        .navbar-custom .navbar-brand { color: var(--warm); font-weight: 900; font-size: 1.2rem; }
+        .navbar-custom .nav-link { color: var(--text-light); font-weight: 600; transition: color 0.3s; }
+        .navbar-custom .nav-link:hover { color: var(--accent); }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 1rem;
+        }
+        .chat-header {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .chat-header h5 { font-weight: 700; margin: 0; }
+        .chat-header small { color: var(--text-muted-light); }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-track { background: var(--dark); }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        .message-bubble {
+            max-width: 75%;
+            padding: 0.8rem 1.2rem;
+            border-radius: 18px;
+            line-height: 1.8;
+            font-size: 0.95rem;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .message-sent {
+            background: var(--accent);
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-left: 18px;
+            border-bottom-right: 4px;
+        }
+        .message-received {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            align-self: flex-start;
+            border-bottom-right: 18px;
+            border-bottom-left: 4px;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 0.3rem;
+        }
+        .message-sent .message-time { text-align: left; }
+        .chat-input-area {
+            padding: 1rem 0;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .chat-input-form {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-end;
+        }
+        .chat-input-form textarea {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            border-radius: 16px;
+            padding: 0.7rem 1rem;
+            resize: none;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.95rem;
+            max-height: 120px;
+        }
+        .chat-input-form textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .chat-input-form textarea::placeholder { color: var(--text-muted-light); }
+        .chat-input-form .btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .chat-input-form .btn:hover { background: #d63550; transform: scale(1.05); }
+        .no-chat-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            text-align: center;
+            max-width: 500px;
+            margin: 3rem auto;
+        }
+        .no-chat-box i { font-size: 4rem; color: var(--text-muted-light); }
+        .no-chat-box h4 { font-weight: 700; margin-top: 1rem; }
+        .no-chat-box p { color: var(--text-muted-light); margin-bottom: 1.5rem; }
+        .btn-accent {
+            background: var(--accent); color: #fff; border: none;
+            padding: 0.8rem 2rem; border-radius: 50px; font-weight: 700; transition: all 0.3s;
+        }
+        .btn-accent:hover { background: #d63550; color: #fff; transform: translateY(-2px); }
+        .date-separator {
+            text-align: center;
+            color: var(--text-muted-light);
+            font-size: 0.8rem;
+            position: relative;
+            margin: 0.5rem 0;
+        }
+        .date-separator span {
+            background: var(--dark);
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .date-separator::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/customer/">
+                <i class="bi bi-wrench-adjustable-circle-fill me-2"></i>ورشة أبو ياسر الصرماح
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span style="color:var(--text-muted-light); font-size:0.9rem;">
+                    <i class="bi bi-person-circle me-1"></i>{{ user.name }}
+                </span>
+                <a href="/customer/profile" class="nav-link" style="padding:0.3rem; font-size:0.9rem;">
+                    <i class="bi bi-person-gear me-1"></i>حسابي
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        {% if chat %}
+        <div class="chat-header">
+            <div class="d-flex align-items-center gap-2">
+                <div style="width:40px; height:40px; background:linear-gradient(135deg, var(--accent), var(--warm)); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-headset text-white"></i>
+                </div>
+                <div>
+                    <h5>دعم العملاء</h5>
+                    <small><i class="bi bi-circle-fill me-1" style="color:#27ae60; font-size:0.5rem;"></i> متصل</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            {% for msg in messages %}
+            <div class="message-bubble {{ 'message-sent' if msg.sender_id == user.id else 'message-received' }}">
+                <div>{{ msg.content }}</div>
+                <div class="message-time">
+                    {{ msg.created_at | default('') }}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5" style="color:var(--text-muted-light);">
+                <i class="bi bi-chat-dots" style="font-size:3rem;"></i>
+                <p class="mt-2">ابدأ المحادثة الآن!</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="chat-input-area">
+            <form method="POST" action="/customer/chat/send" class="chat-input-form">
+                <textarea name="content" rows="1" placeholder="اكتب رسالتك هنا..." required
+                    oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
+                <button type="submit" title="إرسال">
+                    <i class="bi bi-send"></i>
+                </button>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="no-chat-box">
+            <i class="bi bi-chat-square-dots"></i>
+            <h4>ابدأ محادثة جديدة</h4>
+            <p>تواصل مع فريق الدعم للحصول على المساعدة أو الاستفسار عن أي شيء.</p>
+            <form method="POST" action="/customer/chat/send">
+                <button type="submit" class="btn btn-accent">
+                    <i class="bi bi-chat-dots me-2"></i>بدء محادثة
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

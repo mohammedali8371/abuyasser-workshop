@@ -1,0 +1,467 @@
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
+from fastapi.responses import RedirectResponse
+from sqlalchemy import select, func as sqlfunc
+from sqlalchemy.ext.asyncio import AsyncSession
+import os
+import uuid
+
+from app.database import get_db
+from app.models import (
+    User, Product, ProductImage, Category, Order, OrderItem,
+    Review, Chat, Message, Notification, SiteSetting, UserRole, OrderStatus,
+    Payment,
+)
+from app.auth import get_current_user, get_admin, get_owner, verify_password, create_token, hash_password
+from app.templates_mod import render
+
+router = APIRouter()
+
+
+async def _save_upload(file: UploadFile, folder: str) -> str:
+    from app.config import settings
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    path = os.path.join(settings.UPLOAD_DIR, folder)
+    os.makedirs(path, exist_ok=True)
+    filepath = os.path.join(path, filename)
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    return filepath.replace("\\", "/")
+
+
+def _status_arabic(status: str) -> str:
+    return {
+        "new": "جديد", "reviewing": "قيد المراجعة", "accepted": "تم القبول",
+        "in_progress": "قيد التنفيذ", "ready": "جاهز", "completed": "مكتمل",
+        "cancelled": "ملغي",
+    }.get(status, status)
+
+
+@router.get("/login")
+async def admin_login_page(request: Request):
+    return render(request, "admin/login.html")
+
+
+@router.post("/login")
+async def admin_login(request: Request, email: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user or user.role not in (UserRole.OWNER.value, UserRole.ADMIN.value):
+        return render(request, "admin/login.html", {"error": "بيانات الدخول غير صحيحة"})
+    if not verify_password(password, user.password_hash):
+        return render(request, "admin/login.html", {"error": "بيانات الدخول غير صحيحة"})
+    token = create_token(user.id, user.role)
+    resp = RedirectResponse("/admin/", status_code=302)
+    resp.set_cookie("access_token", token, httponly=True, max_age=604800)
+    return resp
+
+
+@router.get("/logout")
+async def admin_logout():
+    resp = RedirectResponse("/admin/login", status_code=302)
+    resp.delete_cookie("access_token")
+    return resp
+
+
+@router.get("/")
+async def admin_dashboard(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Order).order_by(Order.created_at.desc()))
+    orders = result.scalars().all()
+    result = await db.execute(select(User).where(User.role == UserRole.CUSTOMER.value))
+    customers = result.scalars().all()
+    result = await db.execute(select(Product))
+    products = result.scalars().all()
+    result = await db.execute(select(Review))
+    reviews = result.scalars().all()
+
+    stats = {
+        "total_customers": len(customers),
+        "total_products": len(products),
+        "total_orders": len(orders),
+        "new_orders": sum(1 for o in orders if o.status == "new"),
+        "in_progress_orders": sum(1 for o in orders if o.status == "in_progress"),
+        "completed_orders": sum(1 for o in orders if o.status == "completed"),
+        "avg_rating": round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0,
+        "total_reviews": len(reviews),
+    }
+    return render(request, "admin/dashboard.html", {"user": user, "stats": stats, "recent_orders": orders[:10]})
+
+
+@router.get("/products")
+async def admin_products(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Product).order_by(Product.created_at.desc()))
+    products = result.scalars().all()
+    result = await db.execute(select(Category))
+    categories = result.scalars().all()
+    return render(request, "admin/products.html", {"user": user, "products": products, "categories": categories})
+
+
+@router.post("/products/add")
+async def admin_add_product(
+    name: str = Form(...), description: str = Form(""), price: float = Form(0.0),
+    category_id: int = Form(None), is_available: bool = Form(True), stock: int = Form(0),
+    image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    image_path = ""
+    if image and image.filename:
+        image_path = await _save_upload(image, "products")
+    db.add(Product(
+        name=name, description=description, price=price,
+        category_id=category_id if category_id else None,
+        is_available=is_available, stock=stock, image=image_path,
+    ))
+    return RedirectResponse("/admin/products", status_code=302)
+
+
+@router.post("/products/{product_id}/update")
+async def admin_update_product(
+    product_id: int, name: str = Form(...), description: str = Form(""),
+    price: float = Form(0.0), category_id: int = Form(None),
+    is_available: bool = Form(True), stock: int = Form(0),
+    image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if product:
+        product.name = name
+        product.description = description
+        product.price = price
+        product.category_id = category_id if category_id else None
+        product.is_available = is_available
+        product.stock = stock
+        if image and image.filename:
+            product.image = await _save_upload(image, "products")
+    return RedirectResponse("/admin/products", status_code=302)
+
+
+@router.post("/products/{product_id}/delete")
+async def admin_delete_product(product_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if product:
+        await db.delete(product)
+    return RedirectResponse("/admin/products", status_code=302)
+
+
+@router.get("/categories")
+async def admin_categories(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Category).order_by(Category.created_at.desc()))
+    categories = result.scalars().all()
+    return render(request, "admin/categories.html", {"user": user, "categories": categories})
+
+
+@router.post("/categories/add")
+async def admin_add_category(
+    name: str = Form(...), description: str = Form(""), is_active: bool = Form(True),
+    image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    image_path = ""
+    if image and image.filename:
+        image_path = await _save_upload(image, "categories")
+    db.add(Category(name=name, description=description, is_active=is_active, image=image_path))
+    return RedirectResponse("/admin/categories", status_code=302)
+
+
+@router.post("/categories/{category_id}/update")
+async def admin_update_category(
+    category_id: int, name: str = Form(...), description: str = Form(""),
+    is_active: bool = Form(True), image: UploadFile = File(None),
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Category).where(Category.id == category_id))
+    cat = result.scalar_one_or_none()
+    if cat:
+        cat.name = name
+        cat.description = description
+        cat.is_active = is_active
+        if image and image.filename:
+            cat.image = await _save_upload(image, "categories")
+    return RedirectResponse("/admin/categories", status_code=302)
+
+
+@router.post("/categories/{category_id}/delete")
+async def admin_delete_category(category_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Category).where(Category.id == category_id))
+    cat = result.scalar_one_or_none()
+    if cat:
+        await db.delete(cat)
+    return RedirectResponse("/admin/categories", status_code=302)
+
+
+@router.get("/orders")
+async def admin_orders(request: Request, status: str = None, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    query = select(Order).order_by(Order.created_at.desc())
+    if status:
+        query = query.where(Order.status == status)
+    result = await db.execute(query)
+    orders = result.scalars().all()
+    return render(request, "admin/orders.html", {"user": user, "orders": orders, "selected_status": status})
+
+
+@router.get("/orders/{order_id}")
+async def admin_order_detail(request: Request, order_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if not order:
+        return RedirectResponse("/admin/orders", status_code=302)
+    result = await db.execute(select(OrderItem).where(OrderItem.order_id == order_id))
+    items = result.scalars().all()
+    result = await db.execute(select(User).where(User.id == order.user_id))
+    customer = result.scalar_one_or_none()
+    result = await db.execute(
+        select(Payment).where(Payment.order_id == order_id).order_by(Payment.created_at.desc())
+    )
+    payments = result.scalars().all()
+    total_paid = sum(p.amount for p in payments)
+    remaining = max(0, order.total - total_paid)
+    return render(request, "admin/order_detail.html", {
+        "user": user, "order": order, "items": items, "customer": customer,
+        "payments": payments, "total_paid": total_paid, "remaining": remaining,
+    })
+
+
+@router.post("/orders/{order_id}/status")
+async def admin_update_order_status(
+    order_id: int, status: str = Form(...), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if order:
+        order.status = status
+        db.add(Notification(
+            user_id=order.user_id, title="تحديث حالة الطلب",
+            body=f"تم تحديث حالة طلبك رقم {order.order_number} إلى {_status_arabic(status)}",
+            link="/customer/profile",
+        ))
+    return RedirectResponse(f"/admin/orders/{order_id}", status_code=302)
+
+
+@router.get("/customers")
+async def admin_customers(request: Request, q: str = None, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    query = select(User).where(User.role == UserRole.CUSTOMER.value)
+    if q:
+        query = query.where(User.name.contains(q) | User.phone.contains(q) | User.email.contains(q))
+    result = await db.execute(query.order_by(User.created_at.desc()))
+    customers = result.scalars().all()
+    return render(request, "admin/customers.html", {"user": user, "customers": customers, "q": q or ""})
+
+
+@router.post("/customers/{customer_id}/ban")
+async def admin_ban_customer(customer_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == customer_id))
+    customer = result.scalar_one_or_none()
+    if customer:
+        customer.is_banned = not customer.is_banned
+    return RedirectResponse("/admin/customers", status_code=302)
+
+
+@router.get("/chats")
+async def admin_chats(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Chat).order_by(Chat.created_at.desc()))
+    chats = result.scalars().all()
+    chat_users = {}
+    for chat in chats:
+        r = await db.execute(select(User).where(User.id == chat.user_id))
+        chat_users[chat.id] = r.scalar_one_or_none()
+    return render(request, "admin/chats.html", {"user": user, "chats": chats, "chat_users": chat_users})
+
+
+@router.get("/chats/{chat_id}")
+async def admin_chat_detail(request: Request, chat_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Chat).where(Chat.id == chat_id))
+    chat = result.scalar_one_or_none()
+    if not chat:
+        return RedirectResponse("/admin/chats", status_code=302)
+    chat.admin_id = user.id
+    result = await db.execute(select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at))
+    messages = result.scalars().all()
+    for msg in messages:
+        if msg.sender_id != user.id:
+            msg.is_read = True
+    result = await db.execute(select(User).where(User.id == chat.user_id))
+    customer = result.scalar_one_or_none()
+    return render(request, "admin/chat_detail.html", {"user": user, "chat": chat, "messages": messages, "customer": customer})
+
+
+@router.post("/chats/{chat_id}/send")
+async def admin_send_message(chat_id: int, text: str = Form(""), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    db.add(Message(chat_id=chat_id, sender_id=user.id, text=text))
+    return RedirectResponse(f"/admin/chats/{chat_id}", status_code=302)
+
+
+@router.post("/chats/{chat_id}/close")
+async def admin_close_chat(chat_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Chat).where(Chat.id == chat_id))
+    chat = result.scalar_one_or_none()
+    if chat:
+        chat.is_active = False
+    return RedirectResponse("/admin/chats", status_code=302)
+
+
+@router.get("/reviews")
+async def admin_reviews(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Review).order_by(Review.created_at.desc()))
+    reviews = result.scalars().all()
+    review_data = []
+    for r in reviews:
+        u = (await db.execute(select(User).where(User.id == r.user_id))).scalar_one_or_none()
+        p = (await db.execute(select(Product).where(Product.id == r.product_id))).scalar_one_or_none()
+        review_data.append({"review": r, "user": u, "product": p})
+    return render(request, "admin/reviews.html", {"user": user, "review_data": review_data})
+
+
+@router.post("/reviews/{review_id}/delete")
+async def admin_delete_review(review_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Review).where(Review.id == review_id))
+    review = result.scalar_one_or_none()
+    if review:
+        await db.delete(review)
+    return RedirectResponse("/admin/reviews", status_code=302)
+
+
+@router.get("/settings")
+async def admin_settings_page(request: Request, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(SiteSetting))
+    settings_list = result.scalars().all()
+    settings_dict = {s.key: s.value for s in settings_list}
+    return render(request, "admin/settings.html", {"user": user, "settings": settings_dict})
+
+
+@router.post("/settings")
+async def admin_update_settings(request: Request, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    form = await request.form()
+    for key, value in form.items():
+        result = await db.execute(select(SiteSetting).where(SiteSetting.key == key))
+        setting = result.scalar_one_or_none()
+        if setting:
+            setting.value = f'"{value}"'
+        else:
+            db.add(SiteSetting(key=key, value=f'"{value}"'))
+    return RedirectResponse("/admin/settings", status_code=302)
+
+
+@router.get("/notifications")
+async def admin_notifications(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Notification).order_by(Notification.created_at.desc()))
+    notifications = result.scalars().all()
+    notif_users = {}
+    for n in notifications:
+        if n.user_id not in notif_users:
+            r = await db.execute(select(User).where(User.id == n.user_id))
+            notif_users[n.user_id] = r.scalar_one_or_none()
+    return render(request, "admin/notifications.html", {"user": user, "notifications": notifications, "notif_users": notif_users})
+
+
+@router.post("/notifications/send")
+async def admin_send_notification(
+    user_id: int = Form(...), title: str = Form(...), body: str = Form(""), link: str = Form(""),
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    db.add(Notification(user_id=user_id, title=title, body=body, link=link))
+    return RedirectResponse("/admin/notifications", status_code=302)
+
+
+@router.get("/managers")
+async def admin_managers(request: Request, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.role == UserRole.ADMIN.value).order_by(User.created_at.desc()))
+    managers = result.scalars().all()
+    return render(request, "admin/managers.html", {"user": user, "managers": managers})
+
+
+@router.post("/managers/add")
+async def admin_add_manager(
+    name: str = Form(...), phone: str = Form(...), email: str = Form(...), password: str = Form(...),
+    user: User = Depends(get_owner), db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(select(User).where(User.email == email))
+    if existing.scalar_one_or_none():
+        return RedirectResponse("/admin/managers", status_code=302)
+    db.add(User(
+        name=name, phone=phone, email=email,
+        password_hash=hash_password(password), role=UserRole.ADMIN.value,
+    ))
+    return RedirectResponse("/admin/managers", status_code=302)
+
+
+@router.post("/managers/{manager_id}/delete")
+async def admin_delete_manager(manager_id: int, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == manager_id, User.role == UserRole.ADMIN.value))
+    manager = result.scalar_one_or_none()
+    if manager:
+        await db.delete(manager)
+    return RedirectResponse("/admin/managers", status_code=302)
+
+
+@router.post("/managers/{manager_id}/toggle")
+async def admin_toggle_manager(manager_id: int, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == manager_id, User.role == UserRole.ADMIN.value))
+    manager = result.scalar_one_or_none()
+    if manager:
+        manager.is_banned = not manager.is_banned
+    return RedirectResponse("/admin/managers", status_code=302)
+
+
+# ── Payment / Installment Routes ──────────────────────────────────────
+
+
+@router.post("/orders/{order_id}/pay")
+async def admin_record_payment(
+    order_id: int, amount: float = Form(...), note: str = Form(""),
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if not order:
+        return RedirectResponse("/admin/orders", status_code=302)
+    if amount > 0:
+        db.add(Payment(order_id=order_id, amount=amount, note=note))
+        order.paid_amount = order.paid_amount + amount
+    return RedirectResponse(f"/admin/orders/{order_id}", status_code=302)
+
+
+@router.get("/orders/{order_id}/payments")
+async def admin_order_payments(
+    request: Request, order_id: int,
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if not order:
+        return RedirectResponse("/admin/orders", status_code=302)
+    result = await db.execute(
+        select(Payment).where(Payment.order_id == order_id).order_by(Payment.created_at.desc())
+    )
+    payments = result.scalars().all()
+    total_paid = sum(p.amount for p in payments)
+    remaining = max(0, order.total - total_paid)
+    return render(request, "admin/order_payments.html", {
+        "user": user, "order": order, "payments": payments,
+        "total_paid": total_paid, "remaining": remaining,
+    })
+
+
+# ── Admin Profile Routes ──────────────────────────────────────────────
+
+
+@router.get("/profile")
+async def admin_profile_page(request: Request, user: User = Depends(get_admin)):
+    return render(request, "admin/profile.html", {"user": user})
+
+
+@router.post("/profile")
+async def admin_update_profile(
+    request: Request,
+    name: str = Form(...), phone: str = Form(""), email: str = Form(""),
+    password: str = Form(""), user: User = Depends(get_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == user.id))
+    db_user = result.scalar_one_or_none()
+    if db_user:
+        db_user.name = name
+        db_user.phone = phone
+        db_user.email = email
+        if password:
+            db_user.password_hash = hash_password(password)
+    return RedirectResponse("/admin/profile", status_code=302)

@@ -1,0 +1,81 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}التقييمات{% endblock %}
+{% block nav_reviews %}active{% endblock %}
+{% block page_title %}إدارة التقييمات{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="card-header-custom">
+        <h6><i class="bi bi-star-fill ms-2"></i>التقييمات</h6>
+        <span class="text-muted">الإجمالي: {{ review_data|length }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>المنتج</th>
+                    <th>العميل</th>
+                    <th>التقييم</th>
+                    <th>التعليق</th>
+                    <th>التاريخ</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rd in review_data %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <strong>{{ rd.product.name if rd.product else 'منتج محذوف' }}</strong>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width:28px; height:28px; font-size:0.65rem; background:#0d6efd; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                {{ rd.user.name[0] if rd.user and rd.user.name else 'ع' }}
+                            </div>
+                            {{ rd.user.name if rd.user else 'غير معروف' }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="star-rating">
+                            {% for i in range(1, 6) %}
+                            {% if i <= rd.review.rating %}
+                            <i class="bi bi-star-fill"></i>
+                            {% else %}
+                            <i class="bi bi-star"></i>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size:0.85rem;">{{ rd.review.comment if rd.review.comment else '—' }}</span>
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ rd.review.created_at if rd.review.created_at else '—' }}</small>
+                    </td>
+                    <td>
+                        <form action="/admin/reviews/{{ rd.review.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا التقييم؟')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not review_data %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="bi bi-star"></i>
+                            <p>لا توجد تقييمات بعد</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+﻿{% extends "admin/admin_base.html" %}
+
+{% block title %}إدارة المديرين{% endblock %}
+{% block nav_managers %}active{% endblock %}
+{% block page_title %}إدارة المديرين{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <span class="text-muted">إجمالي المديرين: <strong>{{ managers|length }}</strong></span>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addManagerModal">
+        <i class="bi bi-plus-lg ms-2"></i>إضافة مدير
+    </button>
+</div>
+
+<div class="admin-card">
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>الاسم</th>
+                    <th>البريد</th>
+                    <th>الدور</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in managers %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="user-avatar me-2" style="width:32px; height:32px; font-size:0.75rem; background:{% if m.role == 'OWNER' %}#198754{% else %}#0d6efd{% endif %}; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                {{ m.name[0] if m.name else 'م' }}
+                            </div>
+                            <strong>{{ m.name }}</strong>
+                        </div>
+                    </td>
+                    <td>{{ m.email }}</td>
+                    <td>
+                        {% if m.role == 'OWNER' %}
+                        <span class="badge bg-warning bg-opacity-10 text-warning">مالك</span>
+                        {% else %}
+                        <span class="badge bg-info bg-opacity-10 text-info">مدير</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if m.is_banned %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger">محظور</span>
+                        {% else %}
+                        <span class="badge bg-success bg-opacity-10 text-success">نشط</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if m.role != 'OWNER' %}
+                        <form action="/admin/managers/{{ m.id }}/toggle" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm {% if m.is_banned %}btn-outline-success{% else %}btn-outline-warning{% endif %}"
+                                onclick="return confirmDelete('{% if m.is_banned %}هل تريد تفعيل هذا المدير؟{% else %}هل تريد تعطيل هذا المدير؟{% endif %}')">
+                                <i class="bi {% if m.is_banned %}bi-unlock{% else %}bi-lock{% endif %} ms-1"></i>
+                                {% if m.is_banned %}تفعيل{% else %}تعطيل{% endif %}
+                            </button>
+                        </form>
+                        <form action="/admin/managers/{{ m.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا المدير؟')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash ms-1"></i>حذف
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted" style="font-size:0.8rem;">المالك لا يمكن حذفه</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not managers %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-person-gear"></i>
+                            <p>لا يوجد مديرون</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Manager Modal -->
+<div class="modal fade" id="addManagerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus ms-2"></i>إضافة مدير جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/managers/add" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">الاسم الكامل *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">رقم الجوال *</label>
+                        <input type="tel" name="phone" class="form-control" required placeholder="05XXXXXXXX">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">البريد الإلكتروني *</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">كلمة المرور *</label>
+                        <input type="password" name="password" class="form-control" required minlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg ms-2"></i>إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

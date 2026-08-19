@@ -1,0 +1,165 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}الأقسام{% endblock %}
+{% block nav_categories %}active{% endblock %}
+{% block page_title %}إدارة الأقسام{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <span class="text-muted">إجمالي الأقسام: <strong>{{ categories|length }}</strong></span>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="bi bi-plus-lg ms-2"></i>إضافة قسم
+    </button>
+</div>
+
+<div class="admin-card">
+    <div class="table-responsive">
+        <table class="table table-admin mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>الصورة</th>
+                    <th>الاسم</th>
+                    <th>الوصف</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in categories %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        {% if c.image %}
+                        <img src="/{{ c.image }}" alt="{{ c.name }}" class="rounded" style="width:50px; height:50px; object-fit:cover;">
+                        {% else %}
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                            <i class="bi bi-folder2 text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td><span class="text-muted">{{ c.description|truncate(80) if c.description else '—' }}</span></td>
+                    <td>
+                        {% if c.is_active %}
+                        <span class="badge bg-success bg-opacity-10 text-success">نشط</span>
+                        {% else %}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary">غير نشط</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary ms-1"
+                            onclick="editCategory('{{ c.id }}','{{ c.name }}','{{ c.description|default('',true)|e }}','{{ c.is_active|default(true,true) }}')"
+                            title="تعديل">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form action="/admin/categories/{{ c.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا القسم؟')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not categories %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-folder2-open"></i>
+                            <p>لا توجد أقسام بعد</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle ms-2"></i>إضافة قسم جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/categories/add" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">اسم القسم *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">الوصف</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">صورة القسم</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked id="addActive">
+                        <label class="form-check-label" for="addActive">قسم نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg ms-2"></i>إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square ms-2"></i>تعديل القسم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCategoryForm" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">اسم القسم *</label>
+                        <input type="text" name="name" id="edit_cat_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">الوصف</label>
+                        <textarea name="description" id="edit_cat_desc" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">صورة جديدة (اترك فارغاً للاحتفاظ بالحالية)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="edit_cat_active" value="1">
+                        <label class="form-check-label" for="edit_cat_active">قسم نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg ms-2"></i>حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editCategory(id, name, desc, active) {
+    document.getElementById('editCategoryForm').action = '/admin/categories/' + id + '/edit';
+    document.getElementById('edit_cat_name').value = name;
+    document.getElementById('edit_cat_desc').value = desc;
+    document.getElementById('edit_cat_active').checked = (active === 'True' || active === '1' || active === 'true');
+    var modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    modal.show();
+}
+</script>
+{% endblock %}
