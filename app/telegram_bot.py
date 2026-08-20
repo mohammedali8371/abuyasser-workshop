@@ -70,8 +70,10 @@ async def back_kb():
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_owner(update.effective_user.id):
-        await update.message.reply_text("❌ هذا البوت خاص بالمالك فقط.")
+    uid = update.effective_user.id
+    logger.info("Bot /start received from user %s (owner: %s)", uid, OWNER_ID)
+    if not is_owner(uid):
+        await update.message.reply_text(f"❌ هذا البوت خاص بالمالك فقط.\nID: {uid}")
         return
     await update.message.reply_text(
         "🔧 *لوحة تحكم ورشة أبو ياسر الصرماح*\n\nاختر من القائمة:",
@@ -725,26 +727,47 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ تم إرسال الرسالة.", reply_markup=await main_menu_kb())
 
 
+_app_ref = None
+
+
 async def start_bot_polling():
+    global _app_ref
     if not BOT_TOKEN or not OWNER_ID:
         logger.warning("Telegram bot disabled: missing BOT_TOKEN or OWNER_ID")
         return
 
+    logger.info("Starting Telegram bot...")
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(cb_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
+    _app_ref = app
+
     await app.initialize()
     await app.start()
     await app.updater.start_polling(drop_pending_updates=True)
-    logger.info("Telegram bot polling started!")
+    logger.info("Telegram bot polling started! Owner ID: %s", OWNER_ID)
 
-    app.bot_data["stopped"] = False
-    while not app.bot_data.get("stopped"):
-        await asyncio.sleep(3600)
+    me = await app.bot.get_me()
+    logger.info("Bot username: @%s", me.username)
+
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    except asyncio.CancelledError:
+        pass
 
 
 async def stop_bot_polling():
-    logger.info("Stopping Telegram bot...")
+    global _app_ref
+    if _app_ref:
+        logger.info("Stopping Telegram bot...")
+        try:
+            await _app_ref.updater.stop()
+            await _app_ref.stop()
+            await _app_ref.shutdown()
+        except Exception as e:
+            logger.error("Error stopping bot: %s", e)
+        _app_ref = None

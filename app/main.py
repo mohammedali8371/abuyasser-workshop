@@ -88,14 +88,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("Seed data error: %s", e)
 
-    import asyncio
-    global _bot_task
-    try:
-        from app.telegram_bot import start_bot_polling
-        _bot_task = asyncio.create_task(start_bot_polling())
-        logger.info("Telegram bot task started.")
-    except Exception as e:
-        logger.error("Telegram bot start error: %s", e)
+    # Telegram bot disabled on Render - running on VPS instead
+    # import asyncio
+    # global _bot_task
+    # try:
+    #     from app.telegram_bot import start_bot_polling
+    #     _bot_task = asyncio.create_task(start_bot_polling())
+    #     logger.info("Telegram bot task started.")
+    # except Exception as e:
+    #     logger.error("Telegram bot start error: %s", e)
 
     yield
 
