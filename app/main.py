@@ -8,7 +8,7 @@ from sqlalchemy import select
 import io
 
 from app.config import settings
-from app.auth import hash_password
+from app.auth import hash_password, verify_password
 from app.templates_mod import templates
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,12 @@ async def lifespan(app: FastAPI):
                 )
                 db.add(owner)
                 await db.flush()
+            else:
+                if not verify_password(settings.ADMIN_PASSWORD, owner.password_hash):
+                    owner.password_hash = hash_password(settings.ADMIN_PASSWORD)
+                    owner.email = settings.ADMIN_EMAIL
+                    owner.name = settings.ADMIN_NAME
+                    await db.flush()
 
             defaults = {
                 "workshop_name": settings.WORKSHOP_NAME,
