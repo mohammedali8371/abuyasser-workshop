@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models import (
     User, Product, ProductImage, Category, Order, OrderItem,
     Review, Chat, Message, Notification, SiteSetting, UserRole, OrderStatus,
-    Payment,
+    Payment, PaymentMethod,
 )
 from app.auth import get_current_user, get_admin, get_owner, verify_password, create_token, hash_password
 from app.templates_mod import render
@@ -27,7 +27,7 @@ async def _save_upload(file: UploadFile, folder: str) -> str:
     content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
-    return filepath.replace("\\", "/")
+    return "/" + filepath.replace("\\", "/")
 
 
 def _status_arabic(status: str) -> str:
@@ -465,3 +465,58 @@ async def admin_update_profile(
         if password:
             db_user.password_hash = hash_password(password)
     return RedirectResponse("/mo/profile", status_code=302)
+
+
+# ── Payment Methods Routes ──────────────────────────────────────────────
+
+
+@router.get("/payment-methods")
+async def admin_payment_methods(request: Request, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PaymentMethod).order_by(PaymentMethod.sort_order))
+    methods = result.scalars().all()
+    return render(request, "admin/payment_methods.html", {"user": user, "methods": methods})
+
+
+@router.post("/payment-methods/add")
+async def admin_add_payment_method(
+    name: str = Form(...), icon: str = Form("bi-credit-card"),
+    details: str = Form(""), sort_order: int = Form(0),
+    user: User = Depends(get_owner), db: AsyncSession = Depends(get_db),
+):
+    db.add(PaymentMethod(name=name, icon=icon, details=details, sort_order=sort_order))
+    return RedirectResponse("/mo/payment-methods", status_code=302)
+
+
+@router.post("/payment-methods/{method_id}/update")
+async def admin_update_payment_method(
+    method_id: int, name: str = Form(...), icon: str = Form("bi-credit-card"),
+    details: str = Form(""), is_active: bool = Form(True), sort_order: int = Form(0),
+    user: User = Depends(get_owner), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(PaymentMethod).where(PaymentMethod.id == method_id))
+    method = result.scalar_one_or_none()
+    if method:
+        method.name = name
+        method.icon = icon
+        method.details = details
+        method.is_active = is_active
+        method.sort_order = sort_order
+    return RedirectResponse("/mo/payment-methods", status_code=302)
+
+
+@router.post("/payment-methods/{method_id}/delete")
+async def admin_delete_payment_method(method_id: int, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PaymentMethod).where(PaymentMethod.id == method_id))
+    method = result.scalar_one_or_none()
+    if method:
+        await db.delete(method)
+    return RedirectResponse("/mo/payment-methods", status_code=302)
+
+
+@router.post("/payment-methods/{method_id}/toggle")
+async def admin_toggle_payment_method(method_id: int, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PaymentMethod).where(PaymentMethod.id == method_id))
+    method = result.scalar_one_or_none()
+    if method:
+        method.is_active = not method.is_active
+    return RedirectResponse("/mo/payment-methods", status_code=302)

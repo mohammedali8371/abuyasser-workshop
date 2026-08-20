@@ -163,15 +163,16 @@
                             <i class="bi bi-bag-check me-2" style="color:var(--warm);"></i>أصناف الطلب
                         </h5>
                         {% set status_labels = {
-                            'pending': 'قيد الانتظار',
-                            'confirmed': 'تم التأكيد',
-                            'processing': 'قيد التنفيذ',
-                            'shipped': 'تم الشحن',
+                            'new': 'جديد',
+                            'reviewing': 'قيد المراجعة',
+                            'accepted': 'مقبول',
+                            'in_progress': 'قيد التنفيذ',
+                            'ready': 'جاهز',
                             'completed': 'مكتمل',
                             'cancelled': 'ملغي'
                         } %}
-                        <span class="badge status-{{ order.status | default('pending') }}" style="padding:0.5rem 1rem; font-size:0.85rem; border-radius:50px;">
-                            {{ status_labels.get(order.status | default('pending'), order.status) }}
+                        <span class="badge" style="background:var(--accent); padding:0.5rem 1rem; font-size:0.85rem; border-radius:50px;">
+                            {{ status_labels.get(order.status | default('new'), order.status) }}
                         </span>
                     </div>
 
@@ -191,10 +192,10 @@
                                 {% for item in items %}
                                 <tr>
                                     <td>{{ loop.index }}</td>
-                                    <td style="font-weight:600;">{{ item.product_name | default(item.name | default('')) }}</td>
+                                    <td style="font-weight:600;">{{ item.product.name if item.product else '' }}</td>
                                     <td>{{ item.quantity }}</td>
-                                    <td>{{ item.price }} ر.س</td>
-                                    <td style="font-weight:700; color:var(--warm);">{{ (item.price * item.quantity) | round(2) }} ر.س</td>
+                                    <td>{{ item.price }} ر.ي</td>
+                                    <td style="font-weight:700; color:var(--warm);">{{ (item.price * item.quantity) | round(2) }} ر.ي</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -228,7 +229,7 @@
                                 <tr>
                                     <td>{{ loop.index }}</td>
                                     <td>{{ p.created_at | default(p.date | default('')) }}</td>
-                                    <td style="font-weight:700; color:var(--warm);">{{ p.amount }} ر.س</td>
+                                    <td style="font-weight:700; color:var(--warm);">{{ p.amount }} ر.ي</td>
                                     <td style="color:var(--text-muted-light);">{{ p.note | default('—') }}</td>
                                 </tr>
                                 {% endfor %}
@@ -246,17 +247,17 @@
                     </h5>
                     <div class="summary-row total">
                         <span class="label">المبلغ الكلي</span>
-                        <span class="value">{{ order.total | default(0) }} ر.س</span>
+                        <span class="value">{{ order.total | default(0) }} ر.ي</span>
                     </div>
 
                     {% if order.is_installment %}
                     <div class="summary-row">
                         <span class="label">المبلغ المدفوع</span>
-                        <span class="value" style="color:#2ecc71;">{{ order.paid_amount | default(0) }} ر.س</span>
+                        <span class="value" style="color:#2ecc71;">{{ order.paid_amount | default(0) }} ر.ي</span>
                     </div>
                     <div class="summary-row">
                         <span class="label">المتبقي</span>
-                        <span class="value" style="color:var(--accent);">{{ order.remaining | default(order.total | default(0)) }} ر.س</span>
+                        <span class="value" style="color:var(--accent);">{{ order.remaining | default(order.total | default(0)) }} ر.ي</span>
                     </div>
                     <div style="margin-top:0.5rem;">
                         <span class="badge" style="background:rgba(233,69,96,0.15); color:var(--accent); padding:0.4rem 0.8rem; border-radius:50px; font-size:0.8rem;">

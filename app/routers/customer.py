@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import (
     User, Product, Category, Order, OrderItem, Payment, Review,
     Chat, Message, Notification, SiteSetting, UserRole, OrderStatus,
+    PaymentMethod,
 )
 from app.auth import create_token, get_current_user, hash_password, verify_password
 from app.templates_mod import render
@@ -34,7 +35,9 @@ async def customer_home(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SiteSetting))
     site = {s.key: fromjson(s.value) for s in result.scalars().all()}
     user = await _get_user(request, db)
-    return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user})
+    result = await db.execute(select(PaymentMethod).where(PaymentMethod.is_active == True).order_by(PaymentMethod.sort_order))
+    payment_methods = result.scalars().all()
+    return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods})
 
 
 def fromjson(val: str):
@@ -172,7 +175,7 @@ async def customer_update_profile(
 @router.post("/order/create")
 async def create_order(
     product_id: int = Form(...), quantity: int = Form(1), notes: str = Form(""),
-    is_installment: bool = Form(False),
+    is_installment: bool = Form(False), whatsapp: str = Form(""),
     user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
@@ -186,18 +189,33 @@ async def create_order(
     order = Order(
         order_number=f"ORD-{count + 1:05d}", user_id=user.id,
         total=product.price * quantity, notes=notes, status=OrderStatus.NEW.value,
-        is_installment=is_installment,
+        is_installment=is_installment, whatsapp=whatsapp,
     )
     db.add(order)
     await db.flush()
 
     db.add(OrderItem(order_id=order.id, product_id=product.id, quantity=quantity, price=product.price))
+
+    admins = await db.execute(select(User).where(User.role.in_([UserRole.OWNER.value, UserRole.ADMIN.value])))
+    for admin in admins.scalars().all():
+        db.add(Notification(
+            user_id=admin.id, title="طلب جديد",
+            body=f"طلب جديد رقم {order.order_number} من {user.name} — وتساب: {whatsapp} — المنتج: {product.name} — الكمية: {quantity} — المبلغ: {product.price * quantity} ر.ي",
+            link="/mo/orders/" + str(order.id),
+        ))
+
     db.add(Notification(
-        user_id=user.id, title="تم إنشاء الطلب",
-        body=f"تم إنشاء طلبك رقم {order.order_number} بنجاح", link="/customer/profile",
+        user_id=user.id, title="تم إرسال طلبك",
+        body=f"تم إرسال طلبك رقم {order.order_number} بنجاح. سيتم التواصل معك عبر الوتساب في أقرب وقت.",
+        link="/customer/profile",
     ))
 
-    return RedirectResponse("/customer/profile", status_code=302)
+    return RedirectResponse("/customer/order-sent", status_code=302)
+
+
+@router.get("/order-sent")
+async def order_sent(request: Request, user: User = Depends(get_current_user)):
+    return render(request, "customer/order_sent.html", {"user": user})
 
 
 @router.post("/product/{product_id}/review")

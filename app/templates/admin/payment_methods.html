@@ -1,0 +1,159 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}طرق الدفع{% endblock %}
+{% block nav_payment_methods %}active{% endblock %}
+{% block page_title %}طرق الدفع{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <span class="text-muted">إجمالي طرق الدفع: <strong>{{ methods|length }}</strong></span>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="bi bi-plus-circle me-1"></i>إضافة طريقة دفع
+    </button>
+</div>
+
+<div class="admin-card">
+    <div class="card-body-custom">
+        {% if methods %}
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الأيقونة</th>
+                        <th>الاسم</th>
+                        <th>التفاصيل</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in methods %}
+                    <tr>
+                        <td>{{ m.sort_order }}</td>
+                        <td><i class="bi {{ m.icon }}" style="font-size:1.3rem; color:var(--accent);"></i></td>
+                        <td style="font-weight:700;">{{ m.name }}</td>
+                        <td style="color:var(--text-muted); max-width:300px;">{{ m.details[:80] if m.details else '—' }}</td>
+                        <td>
+                            {% if m.is_active %}
+                            <span class="badge bg-success">نشط</span>
+                            {% else %}
+                            <span class="badge bg-secondary">معطل</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="/mo/payment-methods/{{ m.id }}/toggle" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-warning" title="تفعيل/تعطيل">
+                                    <i class="bi bi-toggle-{{ 'on' if m.is_active else 'off' }}"></i>
+                                </button>
+                            </form>
+                            <button class="btn btn-sm btn-outline-primary" title="تعديل"
+                                data-bs-toggle="modal" data-bs-target="#editModal{{ m.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form action="/mo/payment-methods/{{ m.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف طريقة الدفع؟')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-credit-card-2-front text-muted" style="font-size:3rem;"></i>
+            <p class="text-muted mt-2">لا توجد طرق دفع بعد</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background:var(--card-bg); color:var(--text-light);">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                <h5 class="modal-title" style="font-weight:700;">إضافة طريقة دفع</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/mo/payment-methods/add" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم طريقة الدفع</label>
+                        <input type="text" name="name" class="form-control" placeholder="مثال: تحويل بنكي، محافظ إلكترونية" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">أيقونة (Bootstrap Icon)</label>
+                        <input type="text" name="icon" class="form-control" value="bi-credit-card" placeholder="bi-credit-card">
+                        <small class="text-muted">مثال: bi-wallet2, bi-phone, bi-bank, bi-paypal</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">التفاصيل</label>
+                        <textarea name="details" class="form-control" rows="3" placeholder="رقم الحساب، IBAN، رقم الجوال..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الترتيب</label>
+                        <input type="number" name="sort_order" class="form-control" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modals -->
+{% for m in methods %}
+<div class="modal fade" id="editModal{{ m.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background:var(--card-bg); color:var(--text-light);">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color);">
+                <h5 class="modal-title" style="font-weight:700;">تعديل طريقة الدفع</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/mo/payment-methods/{{ m.id }}/update" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم طريقة الدفع</label>
+                        <input type="text" name="name" class="form-control" value="{{ m.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">أيقونة</label>
+                        <input type="text" name="icon" class="form-control" value="{{ m.icon }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">التفاصيل</label>
+                        <textarea name="details" class="form-control" rows="3">{{ m.details }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">الترتيب</label>
+                            <input type="number" name="sort_order" class="form-control" value="{{ m.sort_order }}">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">الحالة</label>
+                            <select name="is_active" class="form-select">
+                                <option value="true" {% if m.is_active %}selected{% endif %}>نشط</option>
+                                <option value="false" {% if not m.is_active %}selected{% endif %}>معطل</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

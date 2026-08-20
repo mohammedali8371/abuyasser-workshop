@@ -102,6 +102,7 @@ class Order(Base):
     is_installment: Mapped[bool] = mapped_column(Boolean, default=False)
     installment_count: Mapped[int] = mapped_column(Integer, default=0)
     notes: Mapped[str] = mapped_column(Text, default="")
+    whatsapp: Mapped[str] = mapped_column(String(30), default="")
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, server_default=func.now()
     )
@@ -228,3 +229,17 @@ class SiteSetting(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     key: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     value: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(200))
+    icon: Mapped[str] = mapped_column(String(100), default="bi-credit-card")
+    details: Mapped[str] = mapped_column(Text, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )

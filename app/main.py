@@ -2,8 +2,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy import select
+import io
 
 from app.database import engine, Base, async_session
 from app.config import settings
@@ -105,3 +106,43 @@ async def forbidden(request: Request, exc):
     if path.startswith("/mo"):
         return RedirectResponse("/mo/login", status_code=302)
     return RedirectResponse("/customer/", status_code=302)
+
+
+@app.get("/og-image")
+async def og_image():
+    from PIL import Image, ImageDraw, ImageFont
+    W, H = 1200, 630
+    img = Image.new("RGB", (W, H), "#1a1a2e")
+    draw = ImageDraw.Draw(img)
+
+    for y in range(H):
+        r = int(26 + (y / H) * 10)
+        g = int(26 + (y / H) * 15)
+        b = int(46 + (y / H) * 20)
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
+
+    draw.rounded_rectangle([40, 40, W-40, H-40], radius=30, fill=None, outline="#e94560", width=3)
+    draw.rounded_rectangle([60, 60, W-60, H-60], radius=20, fill=None, outline="#f5a623", width=1)
+
+    try:
+        font_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 48)
+        font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
+        font_icon = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)
+    except Exception:
+        font_big = ImageFont.load_default()
+        font_small = ImageFont.load_default()
+        font_icon = ImageFont.load_default()
+
+    draw.text((W//2, 180), "Abu Yasser Workshop", font=font_big, fill="#ffffff", anchor="mm")
+    draw.text((W//2, 260), "ورشة أبو ياسر الصرماح", font=font_small, fill="#f5a623", anchor="mm")
+    draw.text((W//2, 350), "Tools & Services", font=font_small, fill="#a0a0b8", anchor="mm")
+
+    draw.ellipse([W//2-40, 420, W//2+40, 500], fill="#e94560")
+    draw.text((W//2, 460), ">>", font=font_small, fill="#ffffff", anchor="mm")
+
+    draw.text((W//2, 560), "abuyasser-workshop.onrender.com", font=font_small, fill="#a0a0b8", anchor="mm")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", quality=95)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})

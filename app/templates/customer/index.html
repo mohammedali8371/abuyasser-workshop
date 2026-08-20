@@ -7,6 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <meta property="og:title" content="{{ site.workshop_name | default('ورشة أبو ياسر الصرماح') }}">
+    <meta property="og:description" content="{{ site.workshop_description | default('ورشة متخصصة في تقديم أفضل الخدمات والمنتجات بأعلى جودة وأفضل الأسعار') }}">
+    <meta property="og:image" content="/og-image">
+    <meta property="og:url" content="https://abuyasser-workshop.onrender.com/customer/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ site.workshop_name | default('ورشة أبو ياسر الصرماح') }}">
+    <meta name="twitter:description" content="{{ site.workshop_description | default('ورشة متخصصة في تقديم أفضل الخدمات والمنتجات') }}">
+    <meta name="twitter:image" content="/og-image">
     <style>
         :root {
             --primary: #1a1a2e;
@@ -323,7 +332,7 @@
                                 <small class="text-muted me-1">({{ product.reviews_count | default(0) }})</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="product-price">{{ product.price }} ر.س</span>
+                                <span class="product-price">{{ product.price }} ر.ي</span>
                                 <a href="/customer/product/{{ product.id }}" class="btn btn-sm btn-accent">
                                     <i class="bi bi-eye"></i>
                                 </a>
@@ -388,6 +397,32 @@
             </div>
         </div>
     </section>
+
+    {% if payment_methods %}
+    <section class="py-5">
+        <div class="container">
+            <div class="text-center">
+                <h2 class="section-title">طرق الدفع</h2>
+                <p class="section-subtitle">يمكنك الدفع بأحد الطرق التالية</p>
+            </div>
+            <div class="row g-4 justify-content-center">
+                {% for pm in payment_methods %}
+                <div class="col-sm-6 col-lg-4 col-xl-3">
+                    <div class="category-card d-block" style="cursor:default;">
+                        <div class="icon" style="background:linear-gradient(135deg, #27ae60, #2ecc71);">
+                            <i class="bi {{ pm.icon }}"></i>
+                        </div>
+                        <h5>{{ pm.name }}</h5>
+                        {% if pm.details %}
+                        <small>{{ pm.details }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
     <footer class="footer-custom">
         <div class="container">
