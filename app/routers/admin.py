@@ -17,17 +17,29 @@ from app.templates_mod import render
 router = APIRouter()
 
 
-async def _save_upload(file: UploadFile, folder: str) -> str:
+import base64
+
+async def _save_upload(file: UploadFile, folder: str) -> tuple:
+    import base64 as b64
     from app.config import settings
     ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    content = await file.read()
+    b64_data = b64.b64encode(content).decode("utf-8")
+    mime = "image/jpeg"
+    if ext.lower() == ".png":
+        mime = "image/png"
+    elif ext.lower() == ".gif":
+        mime = "image/gif"
+    elif ext.lower() == ".webp":
+        mime = "image/webp"
+    data_uri = f"data:{mime};base64,{b64_data}"
     filename = f"{uuid.uuid4().hex}{ext}"
     path = os.path.join(settings.UPLOAD_DIR, folder)
     os.makedirs(path, exist_ok=True)
     filepath = os.path.join(path, filename)
-    content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
-    return "/" + filepath.replace("\\", "/")
+    return "/" + filepath.replace("\\", "/"), data_uri
 
 
 def _status_arabic(status: str) -> str:
@@ -104,12 +116,13 @@ async def admin_add_product(
     image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
     image_path = ""
+    image_data = ""
     if image and image.filename:
-        image_path = await _save_upload(image, "products")
+        image_path, image_data = await _save_upload(image, "products")
     db.add(Product(
         name=name, description=description, price=price,
         category_id=category_id if category_id else None,
-        is_available=is_available, stock=stock, image=image_path,
+        is_available=is_available, stock=stock, image=image_data or image_path,
     ))
     return RedirectResponse("/mo/products", status_code=302)
 
@@ -131,7 +144,8 @@ async def admin_update_product(
         product.is_available = is_available
         product.stock = stock
         if image and image.filename:
-            product.image = await _save_upload(image, "products")
+            path, data = await _save_upload(image, "products")
+            product.image = data or path
     return RedirectResponse("/mo/products", status_code=302)
 
 
@@ -157,9 +171,10 @@ async def admin_add_category(
     image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
     image_path = ""
+    image_data = ""
     if image and image.filename:
-        image_path = await _save_upload(image, "categories")
-    db.add(Category(name=name, description=description, is_active=is_active, image=image_path))
+        image_path, image_data = await _save_upload(image, "categories")
+    db.add(Category(name=name, description=description, is_active=is_active, image=image_data or image_path))
     return RedirectResponse("/mo/categories", status_code=302)
 
 
@@ -176,7 +191,8 @@ async def admin_update_category(
         cat.description = description
         cat.is_active = is_active
         if image and image.filename:
-            cat.image = await _save_upload(image, "categories")
+            path, data = await _save_upload(image, "categories")
+            cat.image = data or path
     return RedirectResponse("/mo/categories", status_code=302)
 
 
@@ -244,7 +260,14 @@ async def admin_customers(request: Request, q: str = None, user: User = Depends(
         query = query.where(User.name.contains(q) | User.phone.contains(q) | User.email.contains(q))
     result = await db.execute(query.order_by(User.created_at.desc()))
     customers = result.scalars().all()
-    return render(request, "admin/customers.html", {"user": user, "customers": customers, "q": q or ""})
+    balances = {}
+    for c in customers:
+        r = await db.execute(select(Order).where(Order.user_id == c.id))
+        orders = r.scalars().all()
+        total = sum(o.total for o in orders)
+        paid = sum(o.paid_amount for o in orders)
+        balances[c.id] = max(0, total - paid)
+    return render(request, "admin/customers.html", {"user": user, "customers": customers, "q": q or "", "balances": balances})
 
 
 @router.post("/customers/{customer_id}/ban")
@@ -520,3 +543,68 @@ async def admin_toggle_payment_method(method_id: int, user: User = Depends(get_o
     if method:
         method.is_active = not method.is_active
     return RedirectResponse("/mo/payment-methods", status_code=302)
+
+
+# ── Customer Balance & Reminder Routes ──────────────────────────────────
+
+
+@router.get("/customers/{customer_id}/balance")
+async def admin_customer_balance(
+    request: Request, customer_id: int,
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == customer_id))
+    customer = result.scalar_one_or_none()
+    if not customer:
+        return RedirectResponse("/mo/customers", status_code=302)
+    result = await db.execute(select(Order).where(Order.user_id == customer_id).order_by(Order.created_at.desc()))
+    orders = result.scalars().all()
+    payments_dict = {}
+    for order in orders:
+        r = await db.execute(select(Payment).where(Payment.order_id == order.id).order_by(Payment.created_at.desc()))
+        payments_dict[order.id] = r.scalars().all()
+    total_all = sum(o.total for o in orders)
+    total_paid = sum(o.paid_amount for o in orders)
+    total_remaining = max(0, total_all - total_paid)
+    return render(request, "admin/customer_balance.html", {
+        "user": user, "customer": customer, "orders": orders,
+        "payments_dict": payments_dict, "total_all": total_all,
+        "total_paid": total_paid, "total_remaining": total_remaining,
+    })
+
+
+@router.post("/orders/{order_id}/adjust")
+async def admin_adjust_payment(
+    order_id: int, paid_amount: float = Form(...),
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if order:
+        order.paid_amount = paid_amount
+    return RedirectResponse(f"/mo/orders/{order_id}", status_code=302)
+
+
+@router.post("/customers/{customer_id}/remind")
+async def admin_send_reminder(
+    customer_id: int,
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == customer_id))
+    customer = result.scalar_one_or_none()
+    if not customer:
+        return RedirectResponse("/mo/customers", status_code=302)
+    result = await db.execute(select(Order).where(Order.user_id == customer_id))
+    orders = result.scalars().all()
+    total_remaining = sum(max(0, o.total - o.paid_amount) for o in orders)
+    if total_remaining > 0:
+        db.add(Notification(
+            user_id=customer_id, title="تذكير بالدفع",
+            body=f"مرحباً {customer.name}، يُبقى لديك مبلغ {total_remaining} ر.ي كمتبقي. يرجى السداد في أقرب وقت.",
+            link="/customer/profile",
+        ))
+        db.add(Notification(
+            user_id=user.id, title="تم إرسال تنبيه",
+            body=f"تم إرسال تنبيه دفع للعميل {customer.name} — المتبقي: {total_remaining} ر.ي",
+        ))
+    return RedirectResponse(f"/mo/customers/{customer_id}/balance", status_code=302)

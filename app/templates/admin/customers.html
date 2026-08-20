@@ -40,6 +40,7 @@
                     <th>البريد</th>
                     <th>تاريخ الانضمام</th>
                     <th>الحالة</th>
+                    <th>المتبقي</th>
                     <th>إجراءات</th>
                 </tr>
             </thead>
@@ -66,6 +67,17 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% set bal = balances.get(c.id, 0) %}
+                        {% if bal > 0 %}
+                        <a href="/mo/customers/{{ c.id }}/balance" class="badge bg-danger bg-opacity-10 text-danger text-decoration-none" style="cursor:pointer;">{{ bal }} ر.ي</a>
+                        {% else %}
+                        <span class="badge bg-success bg-opacity-10 text-success">0 ر.ي</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/mo/customers/{{ c.id }}/balance" class="btn btn-sm btn-outline-info ms-1" title="الحساب">
+                            <i class="bi bi-cash-stack"></i>
+                        </a>
                         <form action="/mo/customers/{{ c.id }}/ban" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm {% if c.is_banned %}btn-outline-success{% else %}btn-outline-danger{% endif %}"
                                 onclick="return confirmDelete('{% if c.is_banned %}هل تريد إلغاء حظر هذا العميل؟{% else %}هل تريد حظر هذا العميل؟{% endif %}')">
@@ -78,7 +90,7 @@
                 {% endfor %}
                 {% if not customers %}
                 <tr>
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="empty-state">
                             <i class="bi bi-people"></i>
                             <p>{% if q %}لا توجد نتائج للبحث{% else %}لا يوجد عملاء بعد{% endif %}</p>

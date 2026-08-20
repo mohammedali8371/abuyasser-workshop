@@ -85,8 +85,9 @@ async def customer_product_detail(request: Request, product_id: int, db: AsyncSe
 
 
 @router.get("/login")
-async def customer_login_page(request: Request):
-    return render(request, "customer/login.html")
+async def customer_login_page(request: Request, db: AsyncSession = Depends(get_db)):
+    site = await _get_site_settings(db)
+    return render(request, "customer/login.html", {"site": site})
 
 
 @router.post("/login")
@@ -108,8 +109,9 @@ async def customer_login(
 
 
 @router.get("/register")
-async def customer_register_page(request: Request):
-    return render(request, "customer/register.html")
+async def customer_register_page(request: Request, db: AsyncSession = Depends(get_db)):
+    site = await _get_site_settings(db)
+    return render(request, "customer/register.html", {"site": site})
 
 
 @router.post("/register")

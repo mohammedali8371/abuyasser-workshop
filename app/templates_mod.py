@@ -33,4 +33,5 @@ def fromjson(val: str):
 templates.env.globals["status_arabic"] = status_arabic
 templates.env.globals["role_arabic"] = role_arabic
 templates.env.globals["stars_html"] = stars_html
+templates.env.filters["fromjson"] = fromjson
 templates.env.globals["fromjson"] = fromjson

@@ -48,6 +48,7 @@ class Category(Base):
     name: Mapped[str] = mapped_column(String(150))
     description: Mapped[str] = mapped_column(Text, default="")
     image: Mapped[str] = mapped_column(String(500), default="")
+    image_data: Mapped[str] = mapped_column(Text, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, server_default=func.now()
@@ -64,6 +65,7 @@ class Product(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     price: Mapped[float] = mapped_column(Float, default=0.0)
     image: Mapped[str] = mapped_column(String(500), default="")
+    image_data: Mapped[str] = mapped_column(Text, default="")
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=True)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     stock: Mapped[int] = mapped_column(Integer, default=0)

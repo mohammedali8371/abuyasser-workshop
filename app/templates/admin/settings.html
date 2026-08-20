@@ -1,17 +1,17 @@
 {% extends "admin/admin_base.html" %}
 
-{% block title %}الإعدادات{% endblock %}
+{% block title %}إعدادات الموقع{% endblock %}
 {% block nav_settings %}active{% endblock %}
 {% block page_title %}إعدادات الموقع{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <form action="/mo/settings" method="post">
-            <!-- Workshop Info -->
+            <!-- معلومات الورشة الأساسية -->
             <div class="admin-card mb-4">
                 <div class="card-header-custom">
-                    <h6><i class="bi bi-shop ms-2"></i>معلومات الورشة</h6>
+                    <h6><i class="bi bi-shop ms-2"></i>معلومات الورشة الأساسية</h6>
                 </div>
                 <div class="card-body-custom">
                     <div class="row g-3">
@@ -24,12 +24,20 @@
                             <input type="text" name="workshop_phone" class="form-control" value="{{ settings.get('workshop_phone', '')|fromjson if settings.get('workshop_phone') else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">الموقع</label>
+                            <label class="form-label fw-semibold">الموقع / العنوان</label>
                             <input type="text" name="workshop_location" class="form-control" value="{{ settings.get('workshop_location', '')|fromjson if settings.get('workshop_location') else '' }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">ساعات العمل</label>
-                            <input type="text" name="workshop_hours" class="form-control" value="{{ settings.get('workshop_hours', '')|fromjson if settings.get('workshop_hours') else '' }}" placeholder="مثال: 8 صباحاً - 10 مساءً">
+                            <input type="text" name="workshop_hours" class="form-control" value="{{ settings.get('workshop_hours', '')|fromjson if settings.get('workshop_hours') else '' }}" placeholder="مثال: السبت - الخميس: 8 صباحاً - 10 مساءً">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">أيام العمل</label>
+                            <input type="text" name="workshop_days" class="form-control" value="{{ settings.get('workshop_days', '')|fromjson if settings.get('workshop_days') else '' }}" placeholder="مثال: السبت إلى الخميس">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">رقم واتساب الورشة</label>
+                            <input type="text" name="whatsapp" class="form-control" value="{{ settings.get('whatsapp', '')|fromjson if settings.get('whatsapp') else '' }}" placeholder="رقم الواتساب مع رمز الدولة">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">وصف الورشة</label>
@@ -43,7 +51,73 @@
                 </div>
             </div>
 
-            <!-- Social Media -->
+            <!-- نصوص الصفحة الرئيسية -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-house-door ms-2"></i>نصوص الصفحة الرئيسية</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان البانر الرئيسي</label>
+                            <input type="text" name="hero_title" class="form-control" value="{{ settings.get('hero_title', '')|fromjson if settings.get('hero_title') else '' }}" placeholder="العنوان الرئيسي في الأعلى">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">نص الزر الرئيسي</label>
+                            <input type="text" name="hero_btn_text" class="form-control" value="{{ settings.get('hero_btn_text', '')|fromjson if settings.get('hero_btn_text') else '' }}" placeholder="نص الزر في البانر">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">وصف البانر الرئيسي</label>
+                            <textarea name="hero_description" class="form-control" rows="2">{{ settings.get('hero_description', '')|fromjson if settings.get('hero_description') else '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان قسم الأقسام</label>
+                            <input type="text" name="categories_title" class="form-control" value="{{ settings.get('categories_title', '')|fromjson if settings.get('categories_title') else '' }}" placeholder="أقسامنا">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">وصف قسم الأقسام</label>
+                            <input type="text" name="categories_subtitle" class="form-control" value="{{ settings.get('categories_subtitle', '')|fromjson if settings.get('categories_subtitle') else '' }}" placeholder="تصفح المنتجات حسب الفئة">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان قسم المنتجات</label>
+                            <input type="text" name="products_title" class="form-control" value="{{ settings.get('products_title', '')|fromjson if settings.get('products_title') else '' }}" placeholder="منتجات مميزة">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">وصف قسم المنتجات</label>
+                            <input type="text" name="products_subtitle" class="form-control" value="{{ settings.get('products_subtitle', '')|fromjson if settings.get('products_subtitle') else '' }}" placeholder="أحدث وأفضل المنتجات">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان قسم التواصل</label>
+                            <input type="text" name="contact_title" class="form-control" value="{{ settings.get('contact_title', '')|fromjson if settings.get('contact_title') else '' }}" placeholder="تواصل معنا">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">وصف قسم التواصل</label>
+                            <input type="text" name="contact_subtitle" class="form-control" value="{{ settings.get('contact_subtitle', '')|fromjson if settings.get('contact_subtitle') else '' }}" placeholder="نحن هنا لمساعدتك">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نصوص الفوتر -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-layout-text-window ms-2"></i>نصوص التذييل (الفوتر)</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">نص الفوتر الرئيسي</label>
+                            <textarea name="footer_text" class="form-control" rows="2">{{ settings.get('footer_text', '')|fromjson if settings.get('footer_text') else '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">نص droits d'auteur</label>
+                            <input type="text" name="copyright_text" class="form-control" value="{{ settings.get('copyright_text', '')|fromjson if settings.get('copyright_text') else '' }}" placeholder="جميع الحقوق محفوظة">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- وسائل التواصل الاجتماعي -->
             <div class="admin-card mb-4">
                 <div class="card-header-custom">
                     <h6><i class="bi bi-share-fill ms-2"></i>وسائل التواصل الاجتماعي</h6>
@@ -70,9 +144,94 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-whatsapp text-success ms-1"></i>واتساب
+                                <i class="bi bi-tiktok ms-1"></i>تيك توك
                             </label>
-                            <input type="text" name="whatsapp" class="form-control" value="{{ settings.get('whatsapp', '')|fromjson if settings.get('whatsapp') else '' }}" placeholder="رقم الواتساب مع رمز الدولة">
+                            <input type="url" name="tiktok" class="form-control" value="{{ settings.get('tiktok', '')|fromjson if settings.get('tiktok') else '' }}" placeholder="رابط حساب تيك توك">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-telegram text-info ms-1"></i>تيليجرام
+                            </label>
+                            <input type="url" name="telegram" class="form-control" value="{{ settings.get('telegram', '')|fromjson if settings.get('telegram') else '' }}" placeholder="رابط حساب تيليجرام">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-youtube text-danger ms-1"></i>يوتيوب
+                            </label>
+                            <input type="url" name="youtube" class="form-control" value="{{ settings.get('youtube', '')|fromjson if settings.get('youtube') else '' }}" placeholder="رابط قناة يوتيوب">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- صفحة "من نحن" -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-info-circle ms-2"></i>صفحة من نحن</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان من نحن</label>
+                            <input type="text" name="about_title" class="form-control" value="{{ settings.get('about_title', '')|fromjson if settings.get('about_title') else '' }}" placeholder="من نحن">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">نص من نحن</label>
+                            <textarea name="about_text" class="form-control" rows="4">{{ settings.get('about_text', '')|fromjson if settings.get('about_text') else '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">رؤيتنا</label>
+                            <textarea name="about_vision" class="form-control" rows="2">{{ settings.get('about_vision', '')|fromjson if settings.get('about_vision') else '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">رسالتنا</label>
+                            <textarea name="about_mission" class="form-control" rows="2">{{ settings.get('about_mission', '')|fromjson if settings.get('about_mission') else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- شروط الاستخدام -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-file-earmark-text ms-2"></i>الشروط والأحكام</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">الشروط والأحكام</label>
+                            <textarea name="terms_text" class="form-control" rows="5">{{ settings.get('terms_text', '')|fromjson if settings.get('terms_text') else '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">سياسة الخصوصية</label>
+                            <textarea name="privacy_text" class="form-control" rows="5">{{ settings.get('privacy_text', '')|fromjson if settings.get('privacy_text') else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نص تسجيل الدخول -->
+            <div class="admin-card mb-4">
+                <div class="card-header-custom">
+                    <h6><i class="bi bi-box-arrow-in-right ms-2"></i>نصوص تسجيل الدخول والتسجيل</h6>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان صفحة تسجيل الدخول</label>
+                            <input type="text" name="login_title" class="form-control" value="{{ settings.get('login_title', '')|fromjson if settings.get('login_title') else '' }}" placeholder="تسجيل الدخول">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">رسالة تسجيل الدخول</label>
+                            <input type="text" name="login_subtitle" class="form-control" value="{{ settings.get('login_subtitle', '')|fromjson if settings.get('login_subtitle') else '' }}" placeholder="أدخل بياناتك للدخول">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">عنوان صفحة التسجيل</label>
+                            <input type="text" name="register_title" class="form-control" value="{{ settings.get('register_title', '')|fromjson if settings.get('register_title') else '' }}" placeholder="حساب جديد">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">رسالة التسجيل</label>
+                            <input type="text" name="register_subtitle" class="form-control" value="{{ settings.get('register_subtitle', '')|fromjson if settings.get('register_subtitle') else '' }}" placeholder="أنشئ حسابك للبدء">
                         </div>
                     </div>
                 </div>
@@ -80,7 +239,7 @@
 
             <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-check-circle ms-2"></i>حفظ الإعدادات
+                    <i class="bi bi-check-circle ms-2"></i>حفظ جميع الإعدادات
                 </button>
             </div>
         </form>
