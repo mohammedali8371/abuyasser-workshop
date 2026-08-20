@@ -8,7 +8,7 @@
 <!-- Search -->
 <div class="admin-card mb-4">
     <div class="card-body-custom py-3">
-        <form method="get" action="/admin/customers" class="row g-2 align-items-center">
+        <form method="get" action="/mo/customers" class="row g-2 align-items-center">
             <div class="col">
                 <div class="input-group">
                     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
@@ -18,7 +18,7 @@
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary">بحث</button>
                 {% if q %}
-                <a href="/admin/customers" class="btn btn-outline-secondary">مسح</a>
+                <a href="/mo/customers" class="btn btn-outline-secondary">مسح</a>
                 {% endif %}
             </div>
         </form>
@@ -66,7 +66,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <form action="/admin/customers/{{ c.id }}/ban" method="post" class="d-inline">
+                        <form action="/mo/customers/{{ c.id }}/ban" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm {% if c.is_banned %}btn-outline-success{% else %}btn-outline-danger{% endif %}"
                                 onclick="return confirmDelete('{% if c.is_banned %}هل تريد إلغاء حظر هذا العميل؟{% else %}هل تريد حظر هذا العميل؟{% endif %}')">
                                 <i class="bi {% if c.is_banned %}bi-unlock{% else %}bi-lock{% endif %} ms-1"></i>

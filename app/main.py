@@ -75,7 +75,7 @@ def include_routers():
     from app.routers import customer, admin
 
     app.include_router(customer.router, prefix="/customer", tags=["Customer"])
-    app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+    app.include_router(admin.router, prefix="/mo", tags=["Admin"])
 
 
 include_routers()
@@ -94,14 +94,14 @@ async def not_found(request: Request, exc):
 @app.exception_handler(401)
 async def unauthorized(request: Request, exc):
     path = request.url.path
-    if path.startswith("/admin"):
-        return RedirectResponse("/admin/login", status_code=302)
+    if path.startswith("/mo"):
+        return RedirectResponse("/mo/login", status_code=302)
     return RedirectResponse("/customer/login", status_code=302)
 
 
 @app.exception_handler(403)
 async def forbidden(request: Request, exc):
     path = request.url.path
-    if path.startswith("/admin"):
-        return RedirectResponse("/admin/login", status_code=302)
+    if path.startswith("/mo"):
+        return RedirectResponse("/mo/login", status_code=302)
     return RedirectResponse("/customer/", status_code=302)

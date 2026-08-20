@@ -55,7 +55,7 @@
                             title="تعديل">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <form action="/admin/categories/{{ c.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا القسم؟')">
+                        <form action="/mo/categories/{{ c.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا القسم؟')">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -86,7 +86,7 @@
                 <h5 class="modal-title"><i class="bi bi-plus-circle ms-2"></i>إضافة قسم جديد</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/admin/categories/add" method="post" enctype="multipart/form-data">
+            <form action="/mo/categories/add" method="post" enctype="multipart/form-data">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">اسم القسم *</label>
@@ -154,7 +154,7 @@
 {% block extra_js %}
 <script>
 function editCategory(id, name, desc, active) {
-    document.getElementById('editCategoryForm').action = '/admin/categories/' + id + '/edit';
+    document.getElementById('editCategoryForm').action = '/mo/categories/' + id + '/edit';
     document.getElementById('edit_cat_name').value = name;
     document.getElementById('edit_cat_desc').value = desc;
     document.getElementById('edit_cat_active').checked = (active === 'True' || active === '1' || active === 'true');

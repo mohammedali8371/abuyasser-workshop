@@ -52,14 +52,14 @@ async def admin_login(request: Request, email: str = Form(...), password: str = 
     if not verify_password(password, user.password_hash):
         return render(request, "admin/login.html", {"error": "بيانات الدخول غير صحيحة"})
     token = create_token(user.id, user.role)
-    resp = RedirectResponse("/admin/", status_code=302)
+    resp = RedirectResponse("/mo/", status_code=302)
     resp.set_cookie("access_token", token, httponly=True, max_age=604800)
     return resp
 
 
 @router.get("/logout")
 async def admin_logout():
-    resp = RedirectResponse("/admin/login", status_code=302)
+    resp = RedirectResponse("/mo/login", status_code=302)
     resp.delete_cookie("access_token")
     return resp
 
@@ -111,7 +111,7 @@ async def admin_add_product(
         category_id=category_id if category_id else None,
         is_available=is_available, stock=stock, image=image_path,
     ))
-    return RedirectResponse("/admin/products", status_code=302)
+    return RedirectResponse("/mo/products", status_code=302)
 
 
 @router.post("/products/{product_id}/update")
@@ -132,7 +132,7 @@ async def admin_update_product(
         product.stock = stock
         if image and image.filename:
             product.image = await _save_upload(image, "products")
-    return RedirectResponse("/admin/products", status_code=302)
+    return RedirectResponse("/mo/products", status_code=302)
 
 
 @router.post("/products/{product_id}/delete")
@@ -141,7 +141,7 @@ async def admin_delete_product(product_id: int, user: User = Depends(get_admin),
     product = result.scalar_one_or_none()
     if product:
         await db.delete(product)
-    return RedirectResponse("/admin/products", status_code=302)
+    return RedirectResponse("/mo/products", status_code=302)
 
 
 @router.get("/categories")
@@ -160,7 +160,7 @@ async def admin_add_category(
     if image and image.filename:
         image_path = await _save_upload(image, "categories")
     db.add(Category(name=name, description=description, is_active=is_active, image=image_path))
-    return RedirectResponse("/admin/categories", status_code=302)
+    return RedirectResponse("/mo/categories", status_code=302)
 
 
 @router.post("/categories/{category_id}/update")
@@ -177,7 +177,7 @@ async def admin_update_category(
         cat.is_active = is_active
         if image and image.filename:
             cat.image = await _save_upload(image, "categories")
-    return RedirectResponse("/admin/categories", status_code=302)
+    return RedirectResponse("/mo/categories", status_code=302)
 
 
 @router.post("/categories/{category_id}/delete")
@@ -186,7 +186,7 @@ async def admin_delete_category(category_id: int, user: User = Depends(get_admin
     cat = result.scalar_one_or_none()
     if cat:
         await db.delete(cat)
-    return RedirectResponse("/admin/categories", status_code=302)
+    return RedirectResponse("/mo/categories", status_code=302)
 
 
 @router.get("/orders")
@@ -204,7 +204,7 @@ async def admin_order_detail(request: Request, order_id: int, user: User = Depen
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
-        return RedirectResponse("/admin/orders", status_code=302)
+        return RedirectResponse("/mo/orders", status_code=302)
     result = await db.execute(select(OrderItem).where(OrderItem.order_id == order_id))
     items = result.scalars().all()
     result = await db.execute(select(User).where(User.id == order.user_id))
@@ -234,7 +234,7 @@ async def admin_update_order_status(
             body=f"تم تحديث حالة طلبك رقم {order.order_number} إلى {_status_arabic(status)}",
             link="/customer/profile",
         ))
-    return RedirectResponse(f"/admin/orders/{order_id}", status_code=302)
+    return RedirectResponse(f"/mo/orders/{order_id}", status_code=302)
 
 
 @router.get("/customers")
@@ -253,7 +253,7 @@ async def admin_ban_customer(customer_id: int, user: User = Depends(get_admin), 
     customer = result.scalar_one_or_none()
     if customer:
         customer.is_banned = not customer.is_banned
-    return RedirectResponse("/admin/customers", status_code=302)
+    return RedirectResponse("/mo/customers", status_code=302)
 
 
 @router.get("/chats")
@@ -272,7 +272,7 @@ async def admin_chat_detail(request: Request, chat_id: int, user: User = Depends
     result = await db.execute(select(Chat).where(Chat.id == chat_id))
     chat = result.scalar_one_or_none()
     if not chat:
-        return RedirectResponse("/admin/chats", status_code=302)
+        return RedirectResponse("/mo/chats", status_code=302)
     chat.admin_id = user.id
     result = await db.execute(select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at))
     messages = result.scalars().all()
@@ -287,7 +287,7 @@ async def admin_chat_detail(request: Request, chat_id: int, user: User = Depends
 @router.post("/chats/{chat_id}/send")
 async def admin_send_message(chat_id: int, text: str = Form(""), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
     db.add(Message(chat_id=chat_id, sender_id=user.id, text=text))
-    return RedirectResponse(f"/admin/chats/{chat_id}", status_code=302)
+    return RedirectResponse(f"/mo/chats/{chat_id}", status_code=302)
 
 
 @router.post("/chats/{chat_id}/close")
@@ -296,7 +296,7 @@ async def admin_close_chat(chat_id: int, user: User = Depends(get_admin), db: As
     chat = result.scalar_one_or_none()
     if chat:
         chat.is_active = False
-    return RedirectResponse("/admin/chats", status_code=302)
+    return RedirectResponse("/mo/chats", status_code=302)
 
 
 @router.get("/reviews")
@@ -317,7 +317,7 @@ async def admin_delete_review(review_id: int, user: User = Depends(get_admin), d
     review = result.scalar_one_or_none()
     if review:
         await db.delete(review)
-    return RedirectResponse("/admin/reviews", status_code=302)
+    return RedirectResponse("/mo/reviews", status_code=302)
 
 
 @router.get("/settings")
@@ -338,7 +338,7 @@ async def admin_update_settings(request: Request, user: User = Depends(get_owner
             setting.value = f'"{value}"'
         else:
             db.add(SiteSetting(key=key, value=f'"{value}"'))
-    return RedirectResponse("/admin/settings", status_code=302)
+    return RedirectResponse("/mo/settings", status_code=302)
 
 
 @router.get("/notifications")
@@ -359,7 +359,7 @@ async def admin_send_notification(
     user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
     db.add(Notification(user_id=user_id, title=title, body=body, link=link))
-    return RedirectResponse("/admin/notifications", status_code=302)
+    return RedirectResponse("/mo/notifications", status_code=302)
 
 
 @router.get("/managers")
@@ -376,12 +376,12 @@ async def admin_add_manager(
 ):
     existing = await db.execute(select(User).where(User.email == email))
     if existing.scalar_one_or_none():
-        return RedirectResponse("/admin/managers", status_code=302)
+        return RedirectResponse("/mo/managers", status_code=302)
     db.add(User(
         name=name, phone=phone, email=email,
         password_hash=hash_password(password), role=UserRole.ADMIN.value,
     ))
-    return RedirectResponse("/admin/managers", status_code=302)
+    return RedirectResponse("/mo/managers", status_code=302)
 
 
 @router.post("/managers/{manager_id}/delete")
@@ -390,7 +390,7 @@ async def admin_delete_manager(manager_id: int, user: User = Depends(get_owner),
     manager = result.scalar_one_or_none()
     if manager:
         await db.delete(manager)
-    return RedirectResponse("/admin/managers", status_code=302)
+    return RedirectResponse("/mo/managers", status_code=302)
 
 
 @router.post("/managers/{manager_id}/toggle")
@@ -399,7 +399,7 @@ async def admin_toggle_manager(manager_id: int, user: User = Depends(get_owner),
     manager = result.scalar_one_or_none()
     if manager:
         manager.is_banned = not manager.is_banned
-    return RedirectResponse("/admin/managers", status_code=302)
+    return RedirectResponse("/mo/managers", status_code=302)
 
 
 # ── Payment / Installment Routes ──────────────────────────────────────
@@ -413,11 +413,11 @@ async def admin_record_payment(
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
-        return RedirectResponse("/admin/orders", status_code=302)
+        return RedirectResponse("/mo/orders", status_code=302)
     if amount > 0:
         db.add(Payment(order_id=order_id, amount=amount, note=note))
         order.paid_amount = order.paid_amount + amount
-    return RedirectResponse(f"/admin/orders/{order_id}", status_code=302)
+    return RedirectResponse(f"/mo/orders/{order_id}", status_code=302)
 
 
 @router.get("/orders/{order_id}/payments")
@@ -428,7 +428,7 @@ async def admin_order_payments(
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
-        return RedirectResponse("/admin/orders", status_code=302)
+        return RedirectResponse("/mo/orders", status_code=302)
     result = await db.execute(
         select(Payment).where(Payment.order_id == order_id).order_by(Payment.created_at.desc())
     )
@@ -464,4 +464,4 @@ async def admin_update_profile(
         db_user.email = email
         if password:
             db_user.password_hash = hash_password(password)
-    return RedirectResponse("/admin/profile", status_code=302)
+    return RedirectResponse("/mo/profile", status_code=302)

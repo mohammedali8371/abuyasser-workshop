@@ -56,14 +56,14 @@
                     </td>
                     <td>
                         {% if m.role != 'OWNER' %}
-                        <form action="/admin/managers/{{ m.id }}/toggle" method="post" class="d-inline">
+                        <form action="/mo/managers/{{ m.id }}/toggle" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm {% if m.is_banned %}btn-outline-success{% else %}btn-outline-warning{% endif %}"
                                 onclick="return confirmDelete('{% if m.is_banned %}هل تريد تفعيل هذا المدير؟{% else %}هل تريد تعطيل هذا المدير؟{% endif %}')">
                                 <i class="bi {% if m.is_banned %}bi-unlock{% else %}bi-lock{% endif %} ms-1"></i>
                                 {% if m.is_banned %}تفعيل{% else %}تعطيل{% endif %}
                             </button>
                         </form>
-                        <form action="/admin/managers/{{ m.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا المدير؟')">
+                        <form action="/mo/managers/{{ m.id }}/delete" method="post" class="d-inline" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا المدير؟')">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash ms-1"></i>حذف
                             </button>
@@ -97,7 +97,7 @@
                 <h5 class="modal-title"><i class="bi bi-person-plus ms-2"></i>إضافة مدير جديد</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/admin/managers/add" method="post">
+            <form action="/mo/managers/add" method="post">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">الاسم الكامل *</label>

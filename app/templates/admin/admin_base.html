@@ -475,39 +475,39 @@
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section">القائمة الرئيسية</div>
-            <a href="/admin/" class="nav-link {% block nav_dashboard %}{% endblock %}">
+            <a href="/mo/" class="nav-link {% block nav_dashboard %}{% endblock %}">
                 <i class="bi bi-grid-1x2-fill"></i>
                 <span>لوحة التحكم</span>
             </a>
-            <a href="/admin/products" class="nav-link {% block nav_products %}{% endblock %}">
+            <a href="/mo/products" class="nav-link {% block nav_products %}{% endblock %}">
                 <i class="bi bi-box-seam-fill"></i>
                 <span>المنتجات</span>
             </a>
-            <a href="/admin/categories" class="nav-link {% block nav_categories %}{% endblock %}">
+            <a href="/mo/categories" class="nav-link {% block nav_categories %}{% endblock %}">
                 <i class="bi bi-tags-fill"></i>
                 <span>الأقسام</span>
             </a>
 
             <div class="nav-section">العمليات</div>
-            <a href="/admin/orders" class="nav-link {% block nav_orders %}{% endblock %}">
+            <a href="/mo/orders" class="nav-link {% block nav_orders %}{% endblock %}">
                 <i class="bi bi-receipt-cutoff"></i>
                 <span>الطلبات</span>
             </a>
-            <a href="/admin/customers" class="nav-link {% block nav_customers %}{% endblock %}">
+            <a href="/mo/customers" class="nav-link {% block nav_customers %}{% endblock %}">
                 <i class="bi bi-people-fill"></i>
                 <span>العملاء</span>
             </a>
-            <a href="/admin/chats" class="nav-link {% block nav_chats %}{% endblock %}">
+            <a href="/mo/chats" class="nav-link {% block nav_chats %}{% endblock %}">
                 <i class="bi bi-chat-dots-fill"></i>
                 <span>المحادثات</span>
             </a>
 
             <div class="nav-section">التقييمات والإشعارات</div>
-            <a href="/admin/reviews" class="nav-link {% block nav_reviews %}{% endblock %}">
+            <a href="/mo/reviews" class="nav-link {% block nav_reviews %}{% endblock %}">
                 <i class="bi bi-star-fill"></i>
                 <span>التقييمات</span>
             </a>
-            <a href="/admin/notifications" class="nav-link {% block nav_notifications %}{% endblock %}">
+            <a href="/mo/notifications" class="nav-link {% block nav_notifications %}{% endblock %}">
                 <i class="bi bi-bell-fill"></i>
                 <span>الإشعارات</span>
                 {% if user and user.role == 'OWNER' and unread_notifs is defined and unread_notifs > 0 %}
@@ -517,18 +517,18 @@
 
             {% if user and user.role == 'OWNER' %}
             <div class="nav-section">الإدارة</div>
-            <a href="/admin/managers" class="nav-link {% block nav_managers %}{% endblock %}">
+            <a href="/mo/managers" class="nav-link {% block nav_managers %}{% endblock %}">
                 <i class="bi bi-person-gear"></i>
                 <span>إدارة المديرين</span>
             </a>
-            <a href="/admin/settings" class="nav-link {% block nav_settings %}{% endblock %}">
+            <a href="/mo/settings" class="nav-link {% block nav_settings %}{% endblock %}">
                 <i class="bi bi-sliders"></i>
                 <span>إعدادات الموقع</span>
             </a>
             {% endif %}
 
             <div class="nav-section" style="margin-top: 0.5rem;"></div>
-            <a href="/admin/logout" class="nav-link logout-link">
+            <a href="/mo/logout" class="nav-link logout-link">
                 <i class="bi bi-box-arrow-left"></i>
                 <span>خروج</span>
             </a>

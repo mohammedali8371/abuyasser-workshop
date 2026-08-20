@@ -7,26 +7,26 @@
 {% block content %}
 <!-- Status Filter Tabs -->
 <div class="filter-tabs">
-    <a href="/admin/orders" class="btn {% if not selected_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">الكل</a>
-    <a href="/admin/orders?status=new" class="btn {% if selected_status == 'new' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders" class="btn {% if not selected_status %}btn-primary{% else %}btn-outline-secondary{% endif %}">الكل</a>
+    <a href="/mo/orders?status=new" class="btn {% if selected_status == 'new' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         جديد
     </a>
-    <a href="/admin/orders?status=reviewing" class="btn {% if selected_status == 'reviewing' %}btn-info{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders?status=reviewing" class="btn {% if selected_status == 'reviewing' %}btn-info{% else %}btn-outline-secondary{% endif %}">
         قيد المراجعة
     </a>
-    <a href="/admin/orders?status=accepted" class="btn {% if selected_status == 'accepted' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders?status=accepted" class="btn {% if selected_status == 'accepted' %}btn-success{% else %}btn-outline-secondary{% endif %}">
         مقبول
     </a>
-    <a href="/admin/orders?status=in_progress" class="btn {% if selected_status == 'in_progress' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders?status=in_progress" class="btn {% if selected_status == 'in_progress' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
         قيد التنفيذ
     </a>
-    <a href="/admin/orders?status=ready" class="btn {% if selected_status == 'ready' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders?status=ready" class="btn {% if selected_status == 'ready' %}btn-success{% else %}btn-outline-secondary{% endif %}">
         جاهز
     </a>
-    <a href="/admin/orders?status=completed" class="btn {% if selected_status == 'completed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders?status=completed" class="btn {% if selected_status == 'completed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
         مكتمل
     </a>
-    <a href="/admin/orders?status=cancelled" class="btn {% if selected_status == 'cancelled' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+    <a href="/mo/orders?status=cancelled" class="btn {% if selected_status == 'cancelled' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
         ملغي
     </a>
 </div>
@@ -83,7 +83,7 @@
                     </td>
                     <td>{{ o.created_at }}</td>
                     <td>
-                        <a href="/admin/orders/{{ o.id }}" class="btn btn-sm btn-outline-primary" title="تفاصيل">
+                        <a href="/mo/orders/{{ o.id }}" class="btn btn-sm btn-outline-primary" title="تفاصيل">
                             <i class="bi bi-eye"></i> تفاصيل
                         </a>
                     </td>

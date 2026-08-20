@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -9,6 +9,6 @@ COPY . .
 
 RUN mkdir -p static/uploads/products static/uploads/avatars static/uploads/covers
 
-EXPOSE $PORT
+EXPOSE 8000
 
-CMD gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
+CMD sh -c "mkdir -p static/uploads/products static/uploads/avatars static/uploads/covers && exec gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000"
