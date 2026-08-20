@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -6,82 +7,104 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy import select
 import io
 
-from app.database import engine, Base, async_session
 from app.config import settings
-from app.models import User, UserRole, SiteSetting
 from app.auth import hash_password
 from app.templates_mod import templates
+
+logger = logging.getLogger(__name__)
+
+_bot_task = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    from app.database import engine, Base, async_session
+    from app.models import User, UserRole, SiteSetting
 
-    async with async_session() as db:
-        result = await db.execute(
-            select(User).where(User.email == settings.ADMIN_EMAIL)
-        )
-        owner = result.scalar_one_or_none()
-        if not owner:
-            owner = User(
-                name=settings.ADMIN_NAME,
-                phone=settings.ADMIN_PHONE,
-                email=settings.ADMIN_EMAIL,
-                password_hash=hash_password(settings.ADMIN_PASSWORD),
-                role=UserRole.OWNER.value,
-            )
-            db.add(owner)
-            await db.flush()
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        logger.error("DB init error: %s", e)
 
-        defaults = {
-            "workshop_name": settings.WORKSHOP_NAME,
-            "workshop_phone": settings.WORKSHOP_PHONE,
-            "workshop_location": settings.WORKSHOP_LOCATION,
-            "workshop_description": "ورشة متخصصة في تقديم أفضل الخدمات والمنتجات لعملائنا الكرام",
-            "workshop_hours": "السبت - الخميس: 8 صباحاً - 10 مساءً",
-            "workshop_days": "السبت إلى الخميس",
-            "welcome_message": "مرحباً بكم في ورشة أبو ياسر الصرماح",
-            "facebook": "", "twitter": "", "instagram": "",
-            "tiktok": "", "telegram": "", "youtube": "",
-            "whatsapp": "",
-            "hero_title": "",
-            "hero_description": "",
-            "hero_btn_text": "",
-            "categories_title": "",
-            "categories_subtitle": "",
-            "products_title": "",
-            "products_subtitle": "",
-            "contact_title": "",
-            "contact_subtitle": "",
-            "footer_text": "",
-            "copyright_text": "",
-            "about_title": "",
-            "about_text": "",
-            "about_vision": "",
-            "about_mission": "",
-            "terms_text": "",
-            "privacy_text": "",
-            "login_title": "",
-            "login_subtitle": "",
-            "register_title": "",
-            "register_subtitle": "",
-        }
-        for key, val in defaults.items():
+    try:
+        async with async_session() as db:
             result = await db.execute(
-                select(SiteSetting).where(SiteSetting.key == key)
+                select(User).where(User.email == settings.ADMIN_EMAIL)
             )
-            if not result.scalar_one_or_none():
-                db.add(SiteSetting(key=key, value=f'"{val}"'))
+            owner = result.scalar_one_or_none()
+            if not owner:
+                owner = User(
+                    name=settings.ADMIN_NAME,
+                    phone=settings.ADMIN_PHONE,
+                    email=settings.ADMIN_EMAIL,
+                    password_hash=hash_password(settings.ADMIN_PASSWORD),
+                    role=UserRole.OWNER.value,
+                )
+                db.add(owner)
+                await db.flush()
 
-        await db.commit()
+            defaults = {
+                "workshop_name": settings.WORKSHOP_NAME,
+                "workshop_phone": settings.WORKSHOP_PHONE,
+                "workshop_location": settings.WORKSHOP_LOCATION,
+                "workshop_description": "ورشة متخصصة في تقديم أفضل الخدمات والمنتجات لعملائنا الكرام",
+                "workshop_hours": "السبت - الخميس: 8 صباحاً - 10 مساءً",
+                "workshop_days": "السبت إلى الخميس",
+                "welcome_message": "مرحباً بكم في ورشة أبو ياسر الصرماح",
+                "facebook": "", "twitter": "", "instagram": "",
+                "tiktok": "", "telegram": "", "youtube": "",
+                "whatsapp": "",
+                "hero_title": "",
+                "hero_description": "",
+                "hero_btn_text": "",
+                "categories_title": "",
+                "categories_subtitle": "",
+                "products_title": "",
+                "products_subtitle": "",
+                "contact_title": "",
+                "contact_subtitle": "",
+                "footer_text": "",
+                "copyright_text": "",
+                "about_title": "",
+                "about_text": "",
+                "about_vision": "",
+                "about_mission": "",
+                "terms_text": "",
+                "privacy_text": "",
+                "login_title": "",
+                "login_subtitle": "",
+                "register_title": "",
+                "register_subtitle": "",
+            }
+            for key, val in defaults.items():
+                result = await db.execute(
+                    select(SiteSetting).where(SiteSetting.key == key)
+                )
+                if not result.scalar_one_or_none():
+                    db.add(SiteSetting(key=key, value=f'"{val}"'))
 
-    from app.telegram_bot import start_bot_polling, stop_bot_polling
-    await start_bot_polling()
+            await db.commit()
+    except Exception as e:
+        logger.error("Seed data error: %s", e)
+
+    import asyncio
+    global _bot_task
+    try:
+        from app.telegram_bot import start_bot_polling
+        _bot_task = asyncio.create_task(start_bot_polling())
+        logger.info("Telegram bot task started.")
+    except Exception as e:
+        logger.error("Telegram bot start error: %s", e)
 
     yield
 
-    await stop_bot_polling()
+    try:
+        from app.telegram_bot import stop_bot_polling
+        await stop_bot_polling()
+    except Exception:
+        pass
+
     await engine.dispose()
 
 

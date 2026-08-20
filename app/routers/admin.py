@@ -4,6 +4,7 @@ from sqlalchemy import select, func as sqlfunc
 from sqlalchemy.ext.asyncio import AsyncSession
 import os
 import uuid
+import json
 
 from app.database import get_db
 from app.models import (
@@ -345,23 +346,25 @@ async def admin_delete_review(review_id: int, user: User = Depends(get_admin), d
 
 
 @router.get("/settings")
-async def admin_settings_page(request: Request, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+async def admin_settings_page(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SiteSetting))
     settings_list = result.scalars().all()
-    settings_dict = {s.key: s.value for s in settings_list}
+    settings_dict = {}
+    for s in settings_list:
+        settings_dict[s.key] = s.value
     return render(request, "admin/settings.html", {"user": user, "settings": settings_dict})
 
 
 @router.post("/settings")
-async def admin_update_settings(request: Request, user: User = Depends(get_owner), db: AsyncSession = Depends(get_db)):
+async def admin_update_settings(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
     form = await request.form()
     for key, value in form.items():
         result = await db.execute(select(SiteSetting).where(SiteSetting.key == key))
         setting = result.scalar_one_or_none()
         if setting:
-            setting.value = f'"{value}"'
+            setting.value = json.dumps(str(value), ensure_ascii=False)
         else:
-            db.add(SiteSetting(key=key, value=f'"{value}"'))
+            db.add(SiteSetting(key=key, value=json.dumps(str(value), ensure_ascii=False)))
     return RedirectResponse("/mo/settings", status_code=302)
 
 
