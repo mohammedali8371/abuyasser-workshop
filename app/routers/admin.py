@@ -58,16 +58,21 @@ async def admin_login_page(request: Request):
 
 @router.post("/login")
 async def admin_login(request: Request, email: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-    if not user or user.role not in (UserRole.OWNER.value, UserRole.ADMIN.value):
-        return render(request, "admin/login.html", {"error": "بيانات الدخول غير صحيحة"})
-    if not verify_password(password, user.password_hash):
-        return render(request, "admin/login.html", {"error": "بيانات الدخول غير صحيحة"})
-    token = create_token(user.id, user.role)
-    resp = RedirectResponse("/mo/", status_code=302)
-    resp.set_cookie("access_token", token, httponly=True, max_age=604800)
-    return resp
+    try:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            return render(request, "admin/login.html", {"error": f"لا يوجد مستخدم بهذا البريد: {email}"})
+        if user.role not in (UserRole.OWNER.value, UserRole.ADMIN.value):
+            return render(request, "admin/login.html", {"error": f"الصلاحية: {user.role} — غير مصرح"})
+        if not verify_password(password, user.password_hash):
+            return render(request, "admin/login.html", {"error": "كلمة المرور خاطئة"})
+        token = create_token(user.id, user.role)
+        resp = RedirectResponse("/mo/", status_code=302)
+        resp.set_cookie("access_token", token, httponly=True, max_age=604800)
+        return resp
+    except Exception as e:
+        return render(request, "admin/login.html", {"error": f"خطأ: {str(e)}"})
 
 
 @router.get("/logout")
