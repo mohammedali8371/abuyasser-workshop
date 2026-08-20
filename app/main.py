@@ -44,11 +44,13 @@ async def lifespan(app: FastAPI):
                 db.add(owner)
                 await db.flush()
             else:
-                if not verify_password(settings.ADMIN_PASSWORD, owner.password_hash):
-                    owner.password_hash = hash_password(settings.ADMIN_PASSWORD)
-                    owner.email = settings.ADMIN_EMAIL
-                    owner.name = settings.ADMIN_NAME
-                    await db.flush()
+                owner.password_hash = hash_password(settings.ADMIN_PASSWORD)
+                owner.email = settings.ADMIN_EMAIL
+                owner.name = settings.ADMIN_NAME
+                owner.phone = settings.ADMIN_PHONE
+                if owner.role != UserRole.OWNER.value:
+                    owner.role = UserRole.OWNER.value
+                await db.flush()
 
             defaults = {
                 "workshop_name": settings.WORKSHOP_NAME,
