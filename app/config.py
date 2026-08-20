@@ -17,6 +17,8 @@ class Settings:
     MAX_UPLOAD_SIZE: int = int(os.getenv("MAX_UPLOAD_SIZE", "10485760"))
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "8503124202:AAGI9rPf3P-5pr5VGzwLhofgda1PXCJtqX4")
+    TELEGRAM_OWNER_ID: int = int(os.getenv("TELEGRAM_OWNER_ID", "7958260008"))
 
 
 settings = Settings()

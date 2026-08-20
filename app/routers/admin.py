@@ -221,7 +221,8 @@ async def admin_order_detail(request: Request, order_id: int, user: User = Depen
     order = result.scalar_one_or_none()
     if not order:
         return RedirectResponse("/mo/orders", status_code=302)
-    result = await db.execute(select(OrderItem).where(OrderItem.order_id == order_id))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(OrderItem).where(OrderItem.order_id == order_id).options(selectinload(OrderItem.product)))
     items = result.scalars().all()
     result = await db.execute(select(User).where(User.id == order.user_id))
     customer = result.scalar_one_or_none()

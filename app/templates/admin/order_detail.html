@@ -79,7 +79,7 @@
                         {% for item in items %}
                         <tr>
                             <td>{{ loop.index }}</td>
-                            <td><strong>{{ item.product_name if item.product_name else 'منتج محذوف' }}</strong></td>
+                            <td><strong>{{ item.product.name if item.product else 'منتج محذوف' }}</strong></td>
                             <td>{{ item.quantity }}</td>
                             <td>{{ item.price }} ر.ي</td>
                             <td><strong>{{ item.price * item.quantity }} ر.ي</strong></td>

@@ -272,7 +272,8 @@ async def order_detail(
     order = result.scalar_one_or_none()
     if not order:
         return RedirectResponse("/customer/profile", status_code=302)
-    result = await db.execute(select(OrderItem).where(OrderItem.order_id == order.id))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(OrderItem).where(OrderItem.order_id == order.id).options(selectinload(OrderItem.product)))
     items = result.scalars().all()
     result = await db.execute(select(Payment).where(Payment.order_id == order.id).order_by(Payment.created_at.desc()))
     payments = result.scalars().all()

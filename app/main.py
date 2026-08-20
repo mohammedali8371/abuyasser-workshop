@@ -76,7 +76,12 @@ async def lifespan(app: FastAPI):
 
         await db.commit()
 
+    from app.telegram_bot import start_bot_polling, stop_bot_polling
+    await start_bot_polling()
+
     yield
+
+    await stop_bot_polling()
     await engine.dispose()
 
 
