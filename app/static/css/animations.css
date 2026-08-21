@@ -1,0 +1,78 @@
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes rotateIn {
+  from { opacity: 0; transform: rotate(-10deg) scale(0.9); }
+  to { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(233,69,96,0.3); }
+  50% { box-shadow: 0 0 20px rgba(233,69,96,0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.anim-fade-up { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.anim-fade-up.visible { opacity: 1; transform: translateY(0); }
+
+.anim-fade-right { opacity: 0; transform: translateX(-40px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.anim-fade-right.visible { opacity: 1; transform: translateX(0); }
+
+.anim-fade-left { opacity: 0; transform: translateX(40px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.anim-fade-left.visible { opacity: 1; transform: translateX(0); }
+
+.anim-scale { opacity: 0; transform: scale(0.8); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.anim-scale.visible { opacity: 1; transform: scale(1); }
+
+.anim-rotate { opacity: 0; transform: rotate(-10deg) scale(0.9); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.anim-rotate.visible { opacity: 1; transform: rotate(0) scale(1); }
+
+.delay-1 { transition-delay: 0.1s; }
+.delay-2 { transition-delay: 0.2s; }
+.delay-3 { transition-delay: 0.3s; }
+.delay-4 { transition-delay: 0.4s; }
+.delay-5 { transition-delay: 0.5s; }
+
+.float-anim { animation: float 3s ease-in-out infinite; }
+.pulse-anim { animation: pulseGlow 2s ease-in-out infinite; }
+.spin-anim { animation: spin 8s linear infinite; }
+
+.shimmer-text {
+  background: linear-gradient(90deg, var(--text-light) 0%, var(--warm) 50%, var(--text-light) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}

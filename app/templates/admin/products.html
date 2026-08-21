@@ -59,7 +59,8 @@
                     </td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary ms-1" data-bs-toggle="modal"
-                            onclick="editProduct('{{ p.id }}','{{ p.name }}','{{ p.description|default('',true)|e }}','{{ p.price }}','{{ p.category_id|default('',true) }}','{{ p.stock|default(0,true) }}','{{ p.is_available|default(true,true) }}','/{{ p.image|default('',true) }}')"
+                            data-bs-target="#editProductModal"
+                            onclick="editProduct('{{ p.id }}','{{ p.name }}','{{ p.description|default('',true)|e }}','{{ p.price }}','{{ p.category_id|default('',true) }}','{{ p.stock|default(0,true) }}','{{ p.is_available|default(true,true) }}','/{{ p.image|default('',true) }}', '{{ p.images|map(attribute='image_data')|list|tojson|e }}')"
                             title="تعديل">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -123,8 +124,13 @@
                             <input type="number" name="stock" class="form-control" value="0" min="0">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">صورة المنتج</label>
+                            <label class="form-label fw-semibold">صورة الغلاف</label>
                             <input type="file" name="image" class="form-control" accept="image/*">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">صور إضافية (اختياري - يمكن اختيار أكثر من صورة)</label>
+                            <input type="file" name="extra_images" class="form-control" accept="image/*" multiple>
+                            <small class="text-muted">اضغط Ctrl واختر عدة صور</small>
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
@@ -184,6 +190,19 @@
                             <input type="file" name="image" class="form-control" accept="image/*">
                         </div>
                         <div class="col-12">
+                            <label class="form-label fw-semibold">صور إضافية</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="replace_images" value="1" id="replaceImgs">
+                                <label class="form-check-label" for="replaceImgs">استبدال كل الصور الإضافية</label>
+                            </div>
+                            <input type="file" name="extra_images" class="form-control" accept="image/*" multiple>
+                            <small class="text-muted">اضغط Ctrl واختر عدة صور. سيتم إضافتها للصور الحالية إلا إذا حدّدت الاستبدال.</small>
+                        </div>
+                        <div id="editExistingImages" class="col-12" style="display:none;">
+                            <label class="form-label fw-semibold">الصور الحالية</label>
+                            <div id="editImagesPreview" class="d-flex gap-2 flex-wrap"></div>
+                        </div>
+                        <div class="col-12">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="is_available" id="edit_available" value="1">
                                 <label class="form-check-label" for="edit_available">متوفر للبيع</label>
@@ -203,19 +222,33 @@
 
 {% block extra_js %}
 <script>
-function editProduct(id, name, desc, price, catId, stock, available, img) {
+function editProduct(id, name, desc, price, catId, stock, available, img, extraImgsJson) {
     document.getElementById('editProductForm').action = '/mo/products/' + id + '/edit';
     document.getElementById('edit_name').value = name;
     document.getElementById('edit_description').value = desc;
     document.getElementById('edit_price').value = price;
     document.getElementById('edit_stock').value = stock;
-    document.getElementById('edit_available').checked = (available === 'True' || available === '1' || available === 'true');
-    var sel = document.getElementById('edit_category');
-    for (var i = 0; i < sel.options.length; i++) {
-        sel.options[i].selected = (sel.options[i].value === catId);
+    document.getElementById('edit_category').value = catId;
+    document.getElementById('edit_available').checked = available === 'True' || available === 'true' || available === '1';
+    var preview = document.getElementById('editImagesPreview');
+    var container = document.getElementById('editExistingImages');
+    preview.innerHTML = '';
+    try {
+        var imgs = JSON.parse(extraImgsJson || '[]');
+        if (imgs.length > 0) {
+            container.style.display = 'block';
+            imgs.forEach(function(src) {
+                var img = document.createElement('img');
+                img.src = src;
+                img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #dee2e6;';
+                preview.appendChild(img);
+            });
+        } else {
+            container.style.display = 'none';
+        }
+    } catch(e) {
+        container.style.display = 'none';
     }
-    var modal = new bootstrap.Modal(document.getElementById('editProductModal'));
-    modal.show();
 }
 </script>
 {% endblock %}

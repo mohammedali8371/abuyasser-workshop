@@ -86,9 +86,10 @@
             padding: 0.8rem 1.2rem;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/animations.css">
 </head>
 <body>
-    <div class="auth-card">
+    <div class="auth-card anim-scale">
         <div class="auth-logo">
             <i class="bi bi-wrench-adjustable-circle-fill"></i>
             <h3>{{ site.workshop_name | default('ورشة أبو ياسر الصرماح') }}</h3>
@@ -142,5 +143,6 @@
             </a>
         </div>
     </div>
+    <script src="/static/js/animations.js"></script>
 </body>
 </html>

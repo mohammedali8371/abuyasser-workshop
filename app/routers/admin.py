@@ -117,28 +117,40 @@ async def admin_products(request: Request, user: User = Depends(get_admin), db: 
 
 @router.post("/products/add")
 async def admin_add_product(
+    request: Request,
     name: str = Form(...), description: str = Form(""), price: float = Form(0.0),
     category_id: int = Form(None), is_available: bool = Form(True), stock: int = Form(0),
-    image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
+    form = await request.form()
+    image = form.get("image")
     image_path = ""
     image_data = ""
-    if image and image.filename:
+    if image and hasattr(image, "filename") and image.filename:
         image_path, image_data = await _save_upload(image, "products")
-    db.add(Product(
+    product = Product(
         name=name, description=description, price=price,
         category_id=category_id if category_id else None,
         is_available=is_available, stock=stock, image=image_data or image_path,
-    ))
+    )
+    db.add(product)
+    await db.flush()
+
+    extra_images = form.getlist("extra_images")
+    for idx, img in enumerate(extra_images):
+        if img and hasattr(img, "filename") and img.filename:
+            path, data = await _save_upload(img, "products")
+            db.add(ProductImage(product_id=product.id, image_data=data or path, sort_order=idx))
+
     return RedirectResponse("/mo/products", status_code=302)
 
 
 @router.post("/products/{product_id}/update")
 async def admin_update_product(
-    product_id: int, name: str = Form(...), description: str = Form(""),
+    product_id: int, request: Request, name: str = Form(...), description: str = Form(""),
     price: float = Form(0.0), category_id: int = Form(None),
     is_available: bool = Form(True), stock: int = Form(0),
-    image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
@@ -149,9 +161,29 @@ async def admin_update_product(
         product.category_id = category_id if category_id else None
         product.is_available = is_available
         product.stock = stock
-        if image and image.filename:
+        form = await request.form()
+        image = form.get("image")
+        if image and hasattr(image, "filename") and image.filename:
             path, data = await _save_upload(image, "products")
             product.image = data or path
+
+        if form.get("replace_images") == "1":
+            for old_img in product.images:
+                await db.delete(old_img)
+            extra_images = form.getlist("extra_images")
+            for idx, img in enumerate(extra_images):
+                if img and hasattr(img, "filename") and img.filename:
+                    path, data = await _save_upload(img, "products")
+                    db.add(ProductImage(product_id=product.id, image_data=data or path, sort_order=idx))
+        else:
+            extra_images = form.getlist("extra_images")
+            if extra_images:
+                max_order = max((i.sort_order for i in product.images), default=-1)
+                for idx, img in enumerate(extra_images):
+                    if img and hasattr(img, "filename") and img.filename:
+                        path, data = await _save_upload(img, "products")
+                        db.add(ProductImage(product_id=product.id, image_data=data or path, sort_order=max_order + idx + 1))
+
     return RedirectResponse("/mo/products", status_code=302)
 
 

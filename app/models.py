@@ -86,7 +86,8 @@ class ProductImage(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
-    image: Mapped[str] = mapped_column(String(500))
+    image: Mapped[str] = mapped_column(String(500), default="")
+    image_data: Mapped[str] = mapped_column(Text, default="")
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
 
     product: Mapped["Product"] = relationship(back_populates="images")

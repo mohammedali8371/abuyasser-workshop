@@ -211,12 +211,13 @@
             .hero-section { padding: 3rem 0; }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/animations.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
         <div class="container">
             <a class="navbar-brand" href="/customer/">
-                <i class="bi bi-wrench-adjustable-circle-fill me-2"></i>
+                <i class="bi bi-wrench-adjustable-circle-fill me-2 float-anim spin-anim"></i>
                 {{ site.workshop_name | default('ورشة أبو ياسر الصرماح') }}
             </a>
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
@@ -298,9 +299,9 @@
         <div class="container position-relative" style="z-index:2;">
             <div class="row align-items-center">
                 <div class="col-lg-7">
-                    <h1 class="hero-title">{{ site.hero_title | default(site.workshop_name | default('ورشة أبو ياسر الصرماح')) }}</h1>
-                    <p class="hero-desc my-4">{{ site.hero_description | default(site.workshop_description | default('ورشة متخصصة في تقديم أفضل المنتجات والخدمات بأعلى جودة وأفضل الأسعار')) }}</p>
-                    <a href="/customer/products" class="btn btn-accent">
+                    <h1 class="hero-title anim-fade-right">{{ site.hero_title | default(site.workshop_name | default('ورشة أبو ياسر الصرماح')) }}</h1>
+                    <p class="hero-desc my-4 anim-fade-right delay-2">{{ site.hero_description | default(site.workshop_description | default('ورشة متخصصة في تقديم أفضل المنتجات والخدمات بأعلى جودة وأفضل الأسعار')) }}</p>
+                    <a href="/customer/products" class="btn btn-accent anim-fade-right delay-3">
                         <i class="bi bi-arrow-left me-2"></i>{{ site.hero_btn_text | default('تصفح المنتجات') }}
                     </a>
                 </div>
@@ -318,13 +319,13 @@
     <section class="py-5">
         <div class="container">
             <div class="text-center">
-                <h2 class="section-title">{{ site.categories_title | default('أقسامنا') }}</h2>
-                <p class="section-subtitle">{{ site.categories_subtitle | default('تصفح المنتجات حسب الفئة') }}</p>
+                <h2 class="section-title anim-fade-up">{{ site.categories_title | default('أقسامنا') }}</h2>
+                <p class="section-subtitle anim-fade-up delay-2">{{ site.categories_subtitle | default('تصفح المنتجات حسب الفئة') }}</p>
             </div>
             <div class="row g-4 justify-content-center">
                 {% for cat in categories %}
                 <div class="col-6 col-md-4 col-lg-3">
-                    <a href="/customer/products?category={{ cat.id }}" class="category-card d-block">
+                    <a href="/customer/products?category={{ cat.id }}" class="category-card d-block anim-scale">
                         <div class="icon">
                             <i class="bi bi-tag-fill"></i>
                         </div>
@@ -341,13 +342,13 @@
     <section class="py-5">
         <div class="container">
             <div class="text-center">
-                <h2 class="section-title">{{ site.products_title | default('منتجات مميزة') }}</h2>
-                <p class="section-subtitle">{{ site.products_subtitle | default('أحدث وأفضل المنتجات المتاحة') }}</p>
+                <h2 class="section-title anim-fade-up">{{ site.products_title | default('منتجات مميزة') }}</h2>
+                <p class="section-subtitle anim-fade-up delay-2">{{ site.products_subtitle | default('أحدث وأفضل المنتجات المتاحة') }}</p>
             </div>
             <div class="row g-4">
                 {% for product in products %}
                 <div class="col-sm-6 col-lg-4 col-xl-3">
-                    <div class="product-card card">
+                    <div class="product-card card anim-fade-up">
                         {% if product.image %}
                         <img src="{{ product.image }}" class="card-img-top" alt="{{ product.name }}">
                         {% else %}
@@ -398,13 +399,13 @@
         <div class="container">
             <div class="info-box" style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:16px; padding:2rem;">
                 <div class="text-center mb-4">
-                    <h2 class="section-title">{{ site.contact_title | default('تواصل معنا') }}</h2>
-                    <p class="section-subtitle">{{ site.contact_subtitle | default('نحن هنا لمساعدتك') }}</p>
+                    <h2 class="section-title anim-fade-up">{{ site.contact_title | default('تواصل معنا') }}</h2>
+                    <p class="section-subtitle anim-fade-up delay-2">{{ site.contact_subtitle | default('نحن هنا لمساعدتك') }}</p>
                 </div>
                 <div class="row g-4 justify-content-center">
                     {% if site.workshop_phone %}
-                    <div class="col-md-4 text-center">
-                        <div style="width:60px; height:60px; background:linear-gradient(135deg, var(--accent), #c0392b); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; color:#fff;">
+                    <div class="col-md-4 text-center anim-fade-up">
+                        <div style="width:60px; height:60px; background:linear-gradient(135deg, var(--accent), #c0392b); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; color:#fff;" class="float-anim">
                             <i class="bi bi-telephone-fill"></i>
                         </div>
                         <h6 style="font-weight:700; color:#fff;">رقم الهاتف</h6>
@@ -412,8 +413,8 @@
                     </div>
                     {% endif %}
                     {% if site.workshop_location %}
-                    <div class="col-md-4 text-center">
-                        <div style="width:60px; height:60px; background:linear-gradient(135deg, var(--warm), #e09520); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; color:#fff;">
+                    <div class="col-md-4 text-center anim-fade-up delay-2">
+                        <div style="width:60px; height:60px; background:linear-gradient(135deg, var(--warm), #e09520); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; color:#fff;" class="float-anim">
                             <i class="bi bi-geo-alt-fill"></i>
                         </div>
                         <h6 style="font-weight:700; color:#fff;">الموقع</h6>
@@ -421,8 +422,8 @@
                     </div>
                     {% endif %}
                     {% if site.workshop_hours %}
-                    <div class="col-md-4 text-center">
-                        <div style="width:60px; height:60px; background:linear-gradient(135deg, #27ae60, #2ecc71); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; color:#fff;">
+                    <div class="col-md-4 text-center anim-fade-up delay-3">
+                        <div style="width:60px; height:60px; background:linear-gradient(135deg, #27ae60, #2ecc71); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.5rem; color:#fff;" class="float-anim">
                             <i class="bi bi-clock-fill"></i>
                         </div>
                         <h6 style="font-weight:700; color:#fff;">أوقات العمل</h6>
@@ -438,13 +439,13 @@
     <section class="py-5">
         <div class="container">
             <div class="text-center">
-                <h2 class="section-title">طرق الدفع</h2>
-                <p class="section-subtitle">يمكنك الدفع بأحد الطرق التالية</p>
+                <h2 class="section-title anim-fade-up">طرق الدفع</h2>
+                <p class="section-subtitle anim-fade-up delay-2">يمكنك الدفع بأحد الطرق التالية</p>
             </div>
             <div class="row g-4 justify-content-center">
                 {% for pm in payment_methods %}
                 <div class="col-sm-6 col-lg-4 col-xl-3">
-                    <div class="category-card d-block" style="cursor:default;">
+                    <div class="category-card d-block anim-scale" style="cursor:default;">
                         <div class="icon" style="background:linear-gradient(135deg, #27ae60, #2ecc71);">
                             <i class="bi {{ pm.icon }}"></i>
                         </div>
@@ -460,7 +461,7 @@
     </section>
     {% endif %}
 
-    <footer class="footer-custom">
+    <footer class="footer-custom anim-fade-up">
         <div class="container">
             <div class="row g-4">
                 <div class="col-lg-4">
@@ -506,5 +507,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/animations.js"></script>
 </body>
 </html>

@@ -131,6 +131,7 @@
             color: var(--text-muted-light); font-size: 0.9rem;
         }
     </style>
+    <link rel="stylesheet" href="/static/css/animations.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
@@ -173,6 +174,37 @@
 
         <div class="row g-4 mb-5">
             <div class="col-lg-6">
+                {% set all_images = [] %}
+                {% if product.image %}
+                {% set _ = all_images.append(product.image) %}
+                {% endif %}
+                {% for img in product.images | sort(attribute='sort_order') %}
+                    {% if img.image_data %}
+                    {% set _ = all_images.append(img.image_data) %}
+                    {% endif %}
+                {% endfor %}
+                {% if all_images | length > 1 %}
+                <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        {% for _ in all_images %}
+                        <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></button>
+                        {% endfor %}
+                    </div>
+                    <div class="carousel-inner product-image-box" style="border-radius:16px; overflow:hidden;">
+                        {% for src in all_images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ src }}" alt="{{ product.name }}" style="width:100%; height:400px; object-fit:cover;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" style="filter:brightness(0) invert(1);"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" style="filter:brightness(0) invert(1);"></span>
+                    </button>
+                </div>
+                {% else %}
                 <div class="product-image-box">
                     {% if product.image %}
                     <img src="{{ product.image }}" alt="{{ product.name }}">
@@ -182,8 +214,9 @@
                     </div>
                     {% endif %}
                 </div>
+                {% endif %}
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-6 anim-fade-left">
                 <h1 style="font-weight:900; font-size:2rem;">{{ product.name }}</h1>
                 <div class="d-flex align-items-center gap-3 my-3">
                     <div class="stars">
@@ -263,7 +296,7 @@
         <hr style="border-color: var(--border-color);">
 
         <section class="my-5">
-            <h3 style="font-weight:900;">
+            <h3 class="anim-fade-up" style="font-weight:900;">
                 <i class="bi bi-chat-dots me-2" style="color:var(--warm);"></i>التقييمات والمراجعات
                 <small style="color:var(--text-muted-light); font-size:0.9rem;">({{ reviews | length }})</small>
             </h3>
@@ -371,7 +404,7 @@
         {% endif %}
     </div>
 
-    <footer class="footer-custom">
+    <footer class="footer-custom anim-fade-up">
         <div class="container">
             <div class="row g-4">
                 <div class="col-lg-4">
@@ -400,5 +433,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/animations.js"></script>
 </body>
 </html>

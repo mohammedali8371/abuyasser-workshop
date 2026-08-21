@@ -164,6 +164,7 @@
             background: var(--border-color);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/animations.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-custom">
@@ -182,7 +183,7 @@
         </div>
     </nav>
 
-    <div class="chat-container">
+    <div class="chat-container anim-fade-up">
         {% if chat %}
         <div class="chat-header">
             <div class="d-flex align-items-center gap-2">
@@ -243,5 +244,6 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     </script>
+    <script src="/static/js/animations.js"></script>
 </body>
 </html>
