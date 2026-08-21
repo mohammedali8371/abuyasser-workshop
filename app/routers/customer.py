@@ -62,7 +62,7 @@ async def customer_products(request: Request, q: str = None, category_id: int = 
         query = query.where(Product.name.contains(q))
     result = await db.execute(query.order_by(Product.created_at.desc()))
     products = result.scalars().all()
-    result = await db.execute(select(Category).where(Category.is_active == True).order_by(Category.sort_order))
+    result = await db.execute(select(Category).where(Category.is_active == True).order_by(Category.id))
     categories = result.scalars().all()
     cat_counts = {}
     for cat in categories:

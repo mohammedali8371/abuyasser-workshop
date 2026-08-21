@@ -189,7 +189,7 @@
             {% for cat in categories %}
             <a href="/customer/products?category={{ cat.id }}&q={{ q if q else '' }}"
                class="filter-tab {{ 'active' if selected_category == cat.id else '' }}">
-                {{ cat.name }} <span class="badge bg-secondary ms-1">{{ cat_counts.get(cat.id, 0) }}</span>
+                {{ cat.name }} <span class="badge bg-secondary ms-1">{{ cat_counts[cat.id] | default(0) }}</span>
             </a>
             {% endfor %}
         </div>
