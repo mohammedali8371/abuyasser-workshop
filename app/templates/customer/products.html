@@ -184,12 +184,12 @@
     <div class="container py-4">
         <div class="filter-tabs d-flex mb-4">
             <a href="/customer/products" class="filter-tab {{ 'active' if not selected_category else '' }}">
-                الكل
+                الكل <span class="badge bg-secondary ms-1">{{ total_count | default(0) }}</span>
             </a>
             {% for cat in categories %}
             <a href="/customer/products?category={{ cat.id }}&q={{ q if q else '' }}"
                class="filter-tab {{ 'active' if selected_category == cat.id else '' }}">
-                {{ cat.name }}
+                {{ cat.name }} <span class="badge bg-secondary ms-1">{{ cat_counts.get(cat.id, 0) }}</span>
             </a>
             {% endfor %}
         </div>

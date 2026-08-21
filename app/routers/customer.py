@@ -62,13 +62,20 @@ async def customer_products(request: Request, q: str = None, category_id: int = 
         query = query.where(Product.name.contains(q))
     result = await db.execute(query.order_by(Product.created_at.desc()))
     products = result.scalars().all()
-    result = await db.execute(select(Category).where(Category.is_active == True))
+    result = await db.execute(select(Category).where(Category.is_active == True).order_by(Category.sort_order))
     categories = result.scalars().all()
+    cat_counts = {}
+    for cat in categories:
+        cr = await db.execute(select(sqlfunc.count()).select_from(Product).where(Product.category_id == cat.id, Product.is_available == True))
+        cat_counts[cat.id] = cr.scalar() or 0
+    total_cr = await db.execute(select(sqlfunc.count()).select_from(Product).where(Product.is_available == True))
+    total_count = total_cr.scalar() or 0
     user = await _get_user(request, db)
     site = await _get_site_settings(db)
     return render(request, "customer/products.html", {
         "products": products, "categories": categories,
         "selected_category": category_id, "q": q or "", "user": user, "site": site,
+        "cat_counts": cat_counts, "total_count": total_count,
     })
 
 

@@ -1,4 +1,5 @@
 import logging
+import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
@@ -89,8 +90,13 @@ async def lifespan(app: FastAPI):
                 result = await db.execute(
                     select(SiteSetting).where(SiteSetting.key == key)
                 )
-                if not result.scalar_one_or_none():
-                    db.add(SiteSetting(key=key, value=f'"{val}"'))
+                existing = result.scalar_one_or_none()
+                if existing:
+                    cur = existing.value or ""
+                    if "?" in cur or "\ufffd" in cur or cur == '""' or cur == "":
+                        existing.value = json.dumps(str(val), ensure_ascii=False)
+                else:
+                    db.add(SiteSetting(key=key, value=json.dumps(str(val), ensure_ascii=False)))
 
             await db.commit()
     except Exception as e:
