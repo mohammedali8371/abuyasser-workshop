@@ -166,48 +166,6 @@ async def forbidden(request: Request, exc):
     return RedirectResponse("/customer/", status_code=302)
 
 
-@app.get("/debug-admin")
-async def debug_admin():
-    try:
-        from app.database import async_session
-        from app.models import User
-        from app.auth import verify_password, hash_password
-        async with async_session() as db:
-            result = await db.execute(select(User))
-            users = result.scalars().all()
-            lines = []
-            for u in users:
-                lines.append(f"ID:{u.id} | email:{u.email} | role:{u.role} | name:{u.name}")
-            admin_email = settings.ADMIN_EMAIL
-            admin_pass = settings.ADMIN_PASSWORD
-            lines.append(f"--- ENV ADMIN_EMAIL={admin_email} ---")
-            lines.append(f"--- ENV ADMIN_PASSWORD={admin_pass} ---")
-            result2 = await db.execute(select(User).where(User.email == admin_email))
-            found = result2.scalar_one_or_none()
-            if found:
-                ok = verify_password(admin_pass, found.password_hash)
-                lines.append(f"Found admin: role={found.role} | password_match={ok}")
-                found.password_hash = hash_password(admin_pass)
-                await db.commit()
-                ok2 = verify_password(admin_pass, found.password_hash)
-                lines.append(f"After reset: password_match={ok2}")
-            else:
-                lines.append("Admin NOT FOUND - creating...")
-                new_admin = User(
-                    name=settings.ADMIN_NAME,
-                    phone=settings.ADMIN_PHONE,
-                    email=admin_email,
-                    password_hash=hash_password(admin_pass),
-                    role="OWNER",
-                )
-                db.add(new_admin)
-                await db.commit()
-                lines.append("Admin created!")
-        return {"debug": lines}
-    except Exception as e:
-        return {"error": str(e)}
-
-
 @app.get("/og-image")
 async def og_image():
     from PIL import Image, ImageDraw, ImageFont

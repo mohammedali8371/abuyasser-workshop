@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Depends, Form, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select, func as sqlfunc
 from sqlalchemy.ext.asyncio import AsyncSession
+import json
 
 from app.database import get_db
 from app.models import (
@@ -13,6 +14,18 @@ from app.auth import create_token, get_current_user, hash_password, verify_passw
 from app.templates_mod import render
 
 router = APIRouter()
+
+
+def fromjson(val: str):
+    try:
+        return json.loads(val)
+    except Exception:
+        return val
+
+
+async def _get_site_settings(db: AsyncSession) -> dict:
+    result = await db.execute(select(SiteSetting))
+    return {s.key: fromjson(s.value) for s in result.scalars().all()}
 
 
 async def _get_user(request: Request, db: AsyncSession):
@@ -32,20 +45,12 @@ async def customer_home(request: Request, db: AsyncSession = Depends(get_db)):
     products = result.scalars().all()
     result = await db.execute(select(Category).where(Category.is_active == True))
     categories = result.scalars().all()
-    result = await db.execute(select(SiteSetting))
-    site = {s.key: fromjson(s.value) for s in result.scalars().all()}
+    site = await _get_site_settings(db)
     user = await _get_user(request, db)
     result = await db.execute(select(PaymentMethod).where(PaymentMethod.is_active == True).order_by(PaymentMethod.sort_order))
     payment_methods = result.scalars().all()
     return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods})
 
-
-def fromjson(val: str):
-    import json
-    try:
-        return json.loads(val)
-    except Exception:
-        return val
 
 
 @router.get("/products")
@@ -60,9 +65,10 @@ async def customer_products(request: Request, q: str = None, category_id: int = 
     result = await db.execute(select(Category).where(Category.is_active == True))
     categories = result.scalars().all()
     user = await _get_user(request, db)
+    site = await _get_site_settings(db)
     return render(request, "customer/products.html", {
         "products": products, "categories": categories,
-        "selected_category": category_id, "q": q or "", "user": user,
+        "selected_category": category_id, "q": q or "", "user": user, "site": site,
     })
 
 
@@ -78,9 +84,10 @@ async def customer_product_detail(request: Request, product_id: int, db: AsyncSe
     related = result.scalars().all()
     avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else 0
     user = await _get_user(request, db)
+    site = await _get_site_settings(db)
     return render(request, "customer/product_detail.html", {
         "product": product, "reviews": reviews, "related": related,
-        "avg_rating": avg_rating, "user": user,
+        "avg_rating": avg_rating, "user": user, "site": site,
     })
 
 
@@ -96,12 +103,13 @@ async def customer_login(
     email: str = Form(...), password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    site = await _get_site_settings(db)
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.password_hash):
-        return render(request, "customer/login.html", {"error": "بيانات الدخول غير صحيحة"})
+        return render(request, "customer/login.html", {"error": "بيانات الدخول غير صحيحة", "site": site})
     if user.is_banned:
-        return render(request, "customer/login.html", {"error": "تم حظر حسابك. تواصل مع الإدارة"})
+        return render(request, "customer/login.html", {"error": "تم حظر حسابك. تواصل مع الإدارة", "site": site})
     token = create_token(user.id, user.role)
     resp = RedirectResponse("/customer/", status_code=302)
     resp.set_cookie("access_token", token, httponly=True, max_age=604800)
@@ -121,14 +129,15 @@ async def customer_register(
     email: str = Form(""), password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    site = await _get_site_settings(db)
     if not email:
         email = f"{phone}@workshop.local"
     result = await db.execute(select(User).where(User.phone == phone))
     if result.scalar_one_or_none():
-        return render(request, "customer/register.html", {"error": "رقم الجوال مستخدم بالفعل"})
+        return render(request, "customer/register.html", {"error": "رقم الجوال مستخدم بالفعل", "site": site})
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
-        return render(request, "customer/register.html", {"error": "البريد الإلكتروني مستخدم بالفعل"})
+        return render(request, "customer/register.html", {"error": "البريد الإلكتروني مستخدم بالفعل", "site": site})
     user = User(name=name, phone=phone, email=email, password_hash=hash_password(password), role=UserRole.CUSTOMER.value)
     db.add(user)
     await db.flush()
@@ -158,7 +167,7 @@ async def customer_profile(request: Request, user: User = Depends(get_current_us
         order_payments[order.id] = result.scalars().all()
     return render(request, "customer/profile.html", {
         "user": user, "orders": orders, "notifications": notifications, "unread": unread,
-        "order_payments": order_payments,
+        "order_payments": order_payments, "site": await _get_site_settings(db),
     })
 
 
@@ -216,8 +225,9 @@ async def create_order(
 
 
 @router.get("/order-sent")
-async def order_sent(request: Request, user: User = Depends(get_current_user)):
-    return render(request, "customer/order_sent.html", {"user": user})
+async def order_sent(request: Request, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    site = await _get_site_settings(db)
+    return render(request, "customer/order_sent.html", {"user": user, "site": site})
 
 
 @router.post("/product/{product_id}/review")
@@ -240,7 +250,7 @@ async def customer_chat(request: Request, user: User = Depends(get_current_user)
     if chat:
         result = await db.execute(select(Message).where(Message.chat_id == chat.id).order_by(Message.created_at))
         messages = result.scalars().all()
-    return render(request, "customer/chat.html", {"user": user, "chat": chat, "messages": messages})
+    return render(request, "customer/chat.html", {"user": user, "chat": chat, "messages": messages, "site": await _get_site_settings(db)})
 
 
 @router.post("/chat/send")
@@ -277,4 +287,4 @@ async def order_detail(
     items = result.scalars().all()
     result = await db.execute(select(Payment).where(Payment.order_id == order.id).order_by(Payment.created_at.desc()))
     payments = result.scalars().all()
-    return render(request, "customer/order_detail.html", {"order": order, "items": items, "payments": payments})
+    return render(request, "customer/order_detail.html", {"order": order, "items": items, "payments": payments, "site": await _get_site_settings(db)})
