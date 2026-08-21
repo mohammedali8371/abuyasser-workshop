@@ -199,9 +199,9 @@
         <div class="chat-messages" id="chatMessages">
             {% for msg in messages %}
             <div class="message-bubble {{ 'message-sent' if msg.sender_id == user.id else 'message-received' }}">
-                <div>{{ msg.content }}</div>
+                <div>{{ msg.text }}</div>
                 <div class="message-time">
-                    {{ msg.created_at | default('') }}
+                    {{ msg.created_at.strftime('%H:%M') if msg.created_at else '' }}
                 </div>
             </div>
             {% else %}
@@ -214,7 +214,7 @@
 
         <div class="chat-input-area">
             <form method="POST" action="/customer/chat/send" class="chat-input-form">
-                <textarea name="content" rows="1" placeholder="اكتب رسالتك هنا..." required
+                <textarea name="text" rows="1" placeholder="اكتب رسالتك هنا..." required
                     oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
                 <button type="submit" title="إرسال">
                     <i class="bi bi-send"></i>

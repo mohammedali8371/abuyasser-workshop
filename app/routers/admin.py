@@ -10,7 +10,7 @@ from app.database import get_db
 from app.models import (
     User, Product, ProductImage, Category, Order, OrderItem,
     Review, Chat, Message, Notification, SiteSetting, UserRole, OrderStatus,
-    Payment, PaymentMethod,
+    Payment, PaymentMethod, BannerImage,
 )
 from app.auth import get_current_user, get_admin, get_owner, verify_password, create_token, hash_password
 from app.templates_mod import render
@@ -617,3 +617,59 @@ async def admin_send_reminder(
             body=f"تم إرسال تنبيه دفع للعميل {customer.name} — المتبقي: {total_remaining} ر.ي",
         ))
     return RedirectResponse(f"/mo/customers/{customer_id}/balance", status_code=302)
+
+
+@router.get("/banners")
+async def admin_banners(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(BannerImage).order_by(BannerImage.sort_order, BannerImage.id.desc()))
+    banners = result.scalars().all()
+    return render(request, "admin/banners.html", {"user": user, "banners": banners})
+
+
+@router.post("/banners/create")
+async def admin_banner_create(
+    request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    form = await request.form()
+    title = form.get("title", "")
+    subtitle = form.get("subtitle", "")
+    link = form.get("link", "")
+    sort_order = int(form.get("sort_order", 0))
+    image_file = form.get("image")
+    image_data = ""
+    if image_file and hasattr(image_file, "read"):
+        image_data = await _save_upload_data(image_file)
+    banner = BannerImage(title=title, subtitle=subtitle, link=link, image_data=image_data, sort_order=sort_order)
+    db.add(banner)
+    return RedirectResponse("/mo/banners", status_code=302)
+
+
+@router.post("/banners/{banner_id}/delete")
+async def admin_banner_delete(
+    banner_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(BannerImage).where(BannerImage.id == banner_id))
+    banner = result.scalar_one_or_none()
+    if banner:
+        await db.delete(banner)
+    return RedirectResponse("/mo/banners", status_code=302)
+
+
+@router.post("/banners/{banner_id}/toggle")
+async def admin_banner_toggle(
+    banner_id: int, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(BannerImage).where(BannerImage.id == banner_id))
+    banner = result.scalar_one_or_none()
+    if banner:
+        banner.is_active = not banner.is_active
+    return RedirectResponse("/mo/banners", status_code=302)
+
+
+async def _save_upload_data(file) -> str:
+    import base64 as b64
+    content = await file.read()
+    ext = os.path.splitext(getattr(file, "filename", "") or "")[1].lower()
+    mime = "image/png" if ext == ".png" else "image/jpeg"
+    b64_str = b64.b64encode(content).decode("utf-8")
+    return f"data:{mime};base64,{b64_str}"

@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models import (
     User, Product, Category, Order, OrderItem, Payment, Review,
     Chat, Message, Notification, SiteSetting, UserRole, OrderStatus,
-    PaymentMethod,
+    PaymentMethod, BannerImage,
 )
 from app.auth import create_token, get_current_user, hash_password, verify_password
 from app.templates_mod import render
@@ -49,7 +49,9 @@ async def customer_home(request: Request, db: AsyncSession = Depends(get_db)):
     user = await _get_user(request, db)
     result = await db.execute(select(PaymentMethod).where(PaymentMethod.is_active == True).order_by(PaymentMethod.sort_order))
     payment_methods = result.scalars().all()
-    return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods})
+    result = await db.execute(select(BannerImage).where(BannerImage.is_active == True).order_by(BannerImage.sort_order, BannerImage.id))
+    banners = result.scalars().all()
+    return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods, "banners": banners})
 
 
 
@@ -59,7 +61,10 @@ async def customer_products(request: Request, q: str = None, category_id: int = 
     if category_id:
         query = query.where(Product.category_id == category_id)
     if q:
-        query = query.where(Product.name.contains(q))
+        cat_ids_subq = select(Category.id).where(Category.name.contains(q)).scalar_subquery()
+        query = query.where(
+            (Product.name.contains(q)) | (Product.category_id.in_(cat_ids_subq))
+        )
     result = await db.execute(query.order_by(Product.created_at.desc()))
     products = result.scalars().all()
     result = await db.execute(select(Category).where(Category.is_active == True).order_by(Category.id))

@@ -260,6 +260,41 @@
     </nav>
 
     <section class="hero-section" style="margin-top: 70px;">
+        {% if banners %}
+        <div id="heroSlider" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+            <div class="carousel-indicators">
+                {% for b in banners %}
+                <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></button>
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+                {% for b in banners %}
+                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                    <div style="height:500px; background-size:cover; background-position:center; background-image:url('{{ b.image_data }}'); position:relative;">
+                        <div style="position:absolute;inset:0; background:linear-gradient(135deg, rgba(15,15,26,0.85) 0%, rgba(22,33,62,0.75) 100%);"></div>
+                        <div class="container position-relative" style="z-index:2; height:100%; display:flex; align-items:center;">
+                            <div>
+                                {% if b.title %}<h1 class="hero-title">{{ b.title }}</h1>{% endif %}
+                                {% if b.subtitle %}<p class="hero-desc my-4">{{ b.subtitle }}</p>{% endif %}
+                                {% if b.link %}
+                                <a href="{{ b.link }}" class="btn btn-accent">
+                                    <i class="bi bi-arrow-left me-2"></i>اكتشف المزيد
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroSlider" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" style="filter:brightness(0) invert(1);"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroSlider" data-bs-slide="next">
+                <span class="carousel-control-next-icon" style="filter:brightness(0) invert(1);"></span>
+            </button>
+        </div>
+        {% else %}
         <div class="container position-relative" style="z-index:2;">
             <div class="row align-items-center">
                 <div class="col-lg-7">
@@ -276,6 +311,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </section>
 
     {% if categories %}

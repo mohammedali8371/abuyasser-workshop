@@ -1,0 +1,99 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}بانرات الصفحة{% endblock %}
+{% block page_title %}<i class="bi bi-images me-2"></i>بانرات الصفحة{% endblock %}
+{% block nav_banners %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h6 class="mb-0">إدارة بانرات الصفحة الرئيسية</h6>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addBannerModal">
+        <i class="bi bi-plus-lg me-1"></i>إضافة بانر
+    </button>
+</div>
+
+<div class="row g-3">
+    {% for banner in banners %}
+    <div class="col-md-6 col-lg-4">
+        <div class="admin-card">
+            <div class="position-relative">
+                {% if banner.image_data %}
+                <img src="{{ banner.image_data }}" class="w-100" style="height:200px; object-fit:cover; border-radius:12px 12px 0 0;" alt="{{ banner.title }}">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height:200px; border-radius:12px 12px 0 0;">
+                    <i class="bi bi-image text-muted" style="font-size:3rem;"></i>
+                </div>
+                {% endif %}
+                {% if not banner.is_active %}
+                <span class="badge bg-secondary position-absolute top-0 end-0 m-2">معطل</span>
+                {% endif %}
+            </div>
+            <div class="p-3">
+                <h6 class="mb-1">{{ banner.title or 'بدون عنوان' }}</h6>
+                <small class="text-muted d-block mb-2">{{ banner.subtitle or '' }}</small>
+                {% if banner.link %}
+                <small class="text-primary"><i class="bi bi-link-45deg"></i> {{ banner.link }}</small>
+                {% endif %}
+                <div class="d-flex gap-2 mt-3">
+                    <form method="POST" action="/mo/banners/{{ banner.id }}/toggle" class="flex-fill">
+                        <button class="btn btn-sm w-100 {{ 'btn-success' if banner.is_active else 'btn-outline-secondary' }}">
+                            <i class="bi {{ 'bi-eye' if banner.is_active else 'bi-eye-slash' }} me-1"></i>
+                            {{ 'مفعل' if banner.is_active else 'معطل' }}
+                        </button>
+                    </form>
+                    <form method="POST" action="/mo/banners/{{ banner.id }}/delete" class="flex-fill" onsubmit="return confirmDelete('هل أنت متأكد من حذف هذا البانر؟')">
+                        <button class="btn btn-sm btn-outline-danger w-100">
+                            <i class="bi bi-trash me-1"></i>حذف
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="empty-state">
+            <i class="bi bi-images"></i>
+            <p>لا توجد بانرات بعد. أضف بانر ليظهر في الصفحة الرئيسية.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="addBannerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/mo/banners/create" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h6 class="modal-title"><i class="bi bi-images me-2"></i>إضافة بانر جديد</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">العنوان</label>
+                        <input type="text" name="title" class="form-control" placeholder="عنوان البانر">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <input type="text" name="subtitle" class="form-control" placeholder="وصف قصير">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الصورة</label>
+                        <input type="file" name="image" class="form-control" accept="image/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الرابط (اختياري)</label>
+                        <input type="text" name="link" class="form-control" placeholder="/customer/products">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الترتيب</label>
+                        <input type="number" name="sort_order" class="form-control" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
