@@ -341,16 +341,24 @@
 
     {% for cat, cat_items in cat_products.items() %}
     {% if cat_items %}
-    <section class="py-5">
+    <section class="py-5" style="border-top:1px solid var(--border-color);">
         <div class="container">
-            <div class="text-center">
-                <h2 class="section-title anim-fade-up">{{ cat.name }}</h2>
-                <p class="section-subtitle anim-fade-up delay-2">منتجات قسم {{ cat.name }}</p>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h2 class="section-title anim-fade-up mb-1" style="text-align:right;">
+                        <i class="bi bi-tag-fill me-2" style="color:var(--accent);"></i>{{ cat.name }}
+                    </h2>
+                    <p class="section-subtitle anim-fade-up delay-2 mb-0" style="text-align:right;">{{ cat_items | length }} منتج{% if cat_items | length > 1 %}ات{% endif %}</p>
+                </div>
+                <a href="/customer/products?category={{ cat.id }}" class="btn btn-warm anim-fade-up">
+                    تصفح القسم
+                    <i class="bi bi-arrow-left ms-2"></i>
+                </a>
             </div>
             <div class="row g-4">
                 {% for product in cat_items[:8] %}
                 <div class="col-sm-6 col-lg-4 col-xl-3">
-                    <div class="product-card card anim-fade-up">
+                    <a href="/customer/product/{{ product.id }}" class="product-card card anim-fade-up text-decoration-none" style="display:block;">
                         {% if product.image %}
                         <img src="{{ product.image }}" class="card-img-top" alt="{{ product.name }}">
                         {% else %}
@@ -372,23 +380,15 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <span class="product-price">{{ product.price }} {{ site.currency | default('ر.ي') }}</span>
-                                <a href="/customer/product/{{ product.id }}" class="btn btn-sm btn-accent">
+                                <span class="btn btn-sm btn-accent">
                                     <i class="bi bi-eye"></i>
-                                </a>
+                                </span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 {% endfor %}
             </div>
-            {% if cat_items | length > 8 %}
-            <div class="text-center mt-4">
-                <a href="/customer/products?category={{ cat.id }}" class="btn btn-warm">
-                    عرض جميع منتجات {{ cat.name }}
-                    <i class="bi bi-arrow-left ms-2"></i>
-                </a>
-            </div>
-            {% endif %}
         </div>
     </section>
     {% endif %}
