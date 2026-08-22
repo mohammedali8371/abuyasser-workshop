@@ -22,30 +22,24 @@ import base64
 
 async def _save_upload(file: UploadFile, folder: str) -> tuple:
     import base64 as b64
-    from app.config import settings
-    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    from io import BytesIO
+    from PIL import Image as PILImage
     content = await file.read()
     if not content:
         return "", ""
-    b64_data = b64.b64encode(content).decode("utf-8")
-    mime = "image/jpeg"
-    if ext.lower() == ".png":
-        mime = "image/png"
-    elif ext.lower() == ".gif":
-        mime = "image/gif"
-    elif ext.lower() == ".webp":
-        mime = "image/webp"
-    data_uri = f"data:{mime};base64,{b64_data}"
     try:
-        filename = f"{uuid.uuid4().hex}{ext}"
-        path = os.path.join(settings.UPLOAD_DIR, folder)
-        os.makedirs(path, exist_ok=True)
-        filepath = os.path.join(path, filename)
-        with open(filepath, "wb") as f:
-            f.write(content)
-        return "/" + filepath.replace("\\", "/"), data_uri
+        img = PILImage.open(BytesIO(content))
+        img.thumbnail((800, 800), PILImage.LANCZOS)
+        buf = BytesIO()
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        img.save(buf, format="JPEG", quality=70, optimize=True)
+        content = buf.getvalue()
     except Exception:
-        return "", data_uri
+        pass
+    b64_data = b64.b64encode(content).decode("utf-8")
+    data_uri = "data:image/jpeg;base64," + b64_data
+    return "", data_uri
 
 
 def _status_arabic(status: str) -> str:
@@ -730,8 +724,18 @@ async def admin_banner_toggle(
 
 async def _save_upload_data(file) -> str:
     import base64 as b64
+    from io import BytesIO
+    from PIL import Image as PILImage
     content = await file.read()
-    ext = os.path.splitext(getattr(file, "filename", "") or "")[1].lower()
-    mime = "image/png" if ext == ".png" else "image/jpeg"
+    try:
+        img = PILImage.open(BytesIO(content))
+        img.thumbnail((1200, 600), PILImage.LANCZOS)
+        buf = BytesIO()
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        img.save(buf, format="JPEG", quality=65, optimize=True)
+        content = buf.getvalue()
+    except Exception:
+        pass
     b64_str = b64.b64encode(content).decode("utf-8")
-    return f"data:{mime};base64,{b64_str}"
+    return f"data:image/jpeg;base64,{b64_str}"
