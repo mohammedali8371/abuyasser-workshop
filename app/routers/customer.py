@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select, func as sqlfunc
 from sqlalchemy.ext.asyncio import AsyncSession
 import json
+import time
 
 from app.database import get_db
 from app.models import (
@@ -23,34 +24,53 @@ def fromjson(val: str):
         return val
 
 
+_site_cache = {"data": None, "ts": 0}
+_user_cache = {}
+CACHE_TTL = 30
+
+
 async def _get_site_settings(db: AsyncSession) -> dict:
+    now = time.time()
+    if _site_cache["data"] and (now - _site_cache["ts"]) < CACHE_TTL:
+        return _site_cache["data"]
     result = await db.execute(select(SiteSetting))
-    return {s.key: fromjson(s.value) for s in result.scalars().all()}
+    data = {s.key: fromjson(s.value) for s in result.scalars().all()}
+    _site_cache["data"] = data
+    _site_cache["ts"] = now
+    return data
 
 
 async def _get_user(request: Request, db: AsyncSession):
     token = request.cookies.get("access_token")
-    if token:
-        from app.auth import decode_token
-        payload = decode_token(token)
-        if payload:
-            r = await db.execute(select(User).where(User.id == int(payload.get("sub", 0))))
-            return r.scalar_one_or_none()
+    if not token:
+        return None
+    cache_key = token
+    now = time.time()
+    if cache_key in _user_cache and (now - _user_cache[cache_key]["ts"]) < CACHE_TTL:
+        return _user_cache[cache_key]["user"]
+    from app.auth import decode_token
+    payload = decode_token(token)
+    if payload:
+        r = await db.execute(select(User).where(User.id == int(payload.get("sub", 0))))
+        user = r.scalar_one_or_none()
+        _user_cache[cache_key] = {"user": user, "ts": now}
+        return user
     return None
 
 
 @router.get("/")
 async def customer_home(request: Request, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product).where(Product.is_available == True).order_by(Product.created_at.desc()).limit(12))
-    products = result.scalars().all()
-    result = await db.execute(select(Category).where(Category.is_active == True))
-    categories = result.scalars().all()
+    from sqlalchemy.orm import selectinload
+    products_q = await db.execute(select(Product).where(Product.is_available == True).order_by(Product.created_at.desc()).limit(12))
+    products = products_q.scalars().all()
+    categories_q = await db.execute(select(Category).where(Category.is_active == True))
+    categories = categories_q.scalars().all()
     site = await _get_site_settings(db)
     user = await _get_user(request, db)
-    result = await db.execute(select(PaymentMethod).where(PaymentMethod.is_active == True).order_by(PaymentMethod.sort_order))
-    payment_methods = result.scalars().all()
-    result = await db.execute(select(BannerImage).where(BannerImage.is_active == True).order_by(BannerImage.sort_order, BannerImage.id))
-    banners = result.scalars().all()
+    payment_q = await db.execute(select(PaymentMethod).where(PaymentMethod.is_active == True).order_by(PaymentMethod.sort_order))
+    payment_methods = payment_q.scalars().all()
+    banners_q = await db.execute(select(BannerImage).where(BannerImage.is_active == True).order_by(BannerImage.sort_order, BannerImage.id))
+    banners = banners_q.scalars().all()
     return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods, "banners": banners})
 
 
@@ -69,12 +89,15 @@ async def customer_products(request: Request, q: str = None, category_id: int = 
     products = result.scalars().all()
     result = await db.execute(select(Category).where(Category.is_active == True).order_by(Category.id))
     categories = result.scalars().all()
-    cat_counts = {}
-    for cat in categories:
-        cr = await db.execute(select(sqlfunc.count()).select_from(Product).where(Product.category_id == cat.id, Product.is_available == True))
-        cat_counts[cat.id] = cr.scalar() or 0
-    total_cr = await db.execute(select(sqlfunc.count()).select_from(Product).where(Product.is_available == True))
-    total_count = total_cr.scalar() or 0
+
+    cat_counts_result = await db.execute(
+        select(Product.category_id, sqlfunc.count(Product.id))
+        .where(Product.is_available == True)
+        .group_by(Product.category_id)
+    )
+    cat_counts = dict(cat_counts_result.all())
+    total_count = sum(cat_counts.values())
+
     user = await _get_user(request, db)
     site = await _get_site_settings(db)
     return render(request, "customer/products.html", {
@@ -86,7 +109,12 @@ async def customer_products(request: Request, q: str = None, category_id: int = 
 
 @router.get("/product/{product_id}")
 async def customer_product_detail(request: Request, product_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(Product).where(Product.id == product_id).options(
+            selectinload(Product.images), selectinload(Product.category)
+        )
+    )
     product = result.scalar_one_or_none()
     if not product:
         return RedirectResponse("/customer/products", status_code=302)

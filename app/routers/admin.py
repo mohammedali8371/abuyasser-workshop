@@ -425,6 +425,13 @@ async def admin_update_settings(request: Request, user: User = Depends(get_admin
         else:
             db.add(SiteSetting(key=key, value=json.dumps(str(value), ensure_ascii=False)))
     await db.commit()
+    # Invalidate customer-side cache
+    try:
+        from app.routers import customer
+        customer._site_cache["data"] = None
+        customer._site_cache["ts"] = 0
+    except Exception:
+        pass
     return RedirectResponse("/mo/settings", status_code=302)
 
 
