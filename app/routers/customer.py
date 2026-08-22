@@ -297,6 +297,26 @@ async def customer_chat(request: Request, user: User = Depends(get_current_user)
     return render(request, "customer/chat.html", {"user": user, "chat": chat, "messages": messages, "site": await _get_site_settings(db)})
 
 
+@router.get("/chat/messages")
+async def chat_messages_json(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from fastapi.responses import JSONResponse
+    result = await db.execute(select(Chat).where(Chat.user_id == user.id, Chat.is_active == True))
+    chat = result.scalar_one_or_none()
+    if not chat:
+        return JSONResponse({"messages": []})
+    result = await db.execute(select(Message).where(Message.chat_id == chat.id).order_by(Message.created_at))
+    msgs = result.scalars().all()
+    data = []
+    for m in msgs:
+        data.append({
+            "id": m.id,
+            "text": m.text,
+            "is_sent": m.sender_id == user.id,
+            "time": m.created_at.strftime('%H:%M') if m.created_at else "",
+        })
+    return JSONResponse({"messages": data})
+
+
 @router.post("/chat/send")
 async def send_message(text: str = Form(""), user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Chat).where(Chat.user_id == user.id, Chat.is_active == True))

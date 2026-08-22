@@ -243,6 +243,30 @@
         if (chatMessages) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+
+        {% if chat %}
+        let lastMsgCount = {{ messages | length }};
+        setInterval(async () => {
+            try {
+                const resp = await fetch('/customer/chat/messages');
+                const data = await resp.json();
+                if (data.messages && data.messages.length > lastMsgCount) {
+                    lastMsgCount = data.messages.length;
+                    const chatBox = document.getElementById('chatMessages');
+                    for (let i = data.messages.length - 1; i >= 0; i--) {
+                        const m = data.messages[i];
+                        if (chatBox.querySelector('[data-msg-id="' + m.id + '"]')) continue;
+                        const div = document.createElement('div');
+                        div.className = 'message-bubble ' + (m.is_sent ? 'message-sent' : 'message-received');
+                        div.setAttribute('data-msg-id', m.id);
+                        div.innerHTML = '<div>' + m.text + '</div><div class="message-time">' + m.time + '</div>';
+                        chatBox.appendChild(div);
+                    }
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch(e) {}
+        }, 5000);
+        {% endif %}
     </script>
     <script src="/static/js/animations.js"></script>
 </body>
