@@ -141,7 +141,7 @@
                     <td>{{ loop.index }}</td>
                     <td><strong>{{ o.order_number }}</strong></td>
                     <td>{{ o.customer_name if o.customer_name else 'غير معروف' }}</td>
-                    <td>{{ o.total }} ر.س</td>
+                    <td>{{ o.total }} {{ currency_symbol() }}</td>
                     <td>
                         {% if o.status == 'new' %}
                             <span class="badge-status bg-primary">جديد</span>

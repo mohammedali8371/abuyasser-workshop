@@ -68,7 +68,7 @@
                             <tr>
                                 <td>{{ loop.index }}</td>
                                 <td>{{ p.created_at | default(p.date | default('')) }}</td>
-                                <td><strong class="text-success">{{ p.amount }} ر.س</strong></td>
+                                <td><strong class="text-success">{{ p.amount }} {{ currency_symbol() }}</strong></td>
                                 <td>{{ p.note | default('—') }}</td>
                             </tr>
                             {% endfor %}
@@ -93,15 +93,15 @@
             <div class="card-body-custom">
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid #f0f0f0;">
                     <span class="text-muted">المبلغ الكلي</span>
-                    <strong style="font-size:1.1rem;">{{ order.total | default(0) }} ر.س</strong>
+                    <strong style="font-size:1.1rem;">{{ order.total | default(0) }} {{ currency_symbol() }}</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid #f0f0f0;">
                     <span class="text-muted">المبلغ المدفوع</span>
-                    <strong style="font-size:1.1rem; color:#198754;">{{ total_paid | default(0) }} ر.س</strong>
+                    <strong style="font-size:1.1rem; color:#198754;">{{ total_paid | default(0) }} {{ currency_symbol() }}</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted">المتبقي</span>
-                    <strong style="font-size:1.1rem; color:#dc3545;">{{ remaining | default(order.total | default(0)) }} ر.س</strong>
+                    <strong style="font-size:1.1rem; color:#dc3545;">{{ remaining | default(order.total | default(0)) }} {{ currency_symbol() }}</strong>
                 </div>
             </div>
         </div>

@@ -20,6 +20,21 @@
                             <input type="text" name="workshop_name" class="form-control" value="{{ settings.get('workshop_name', '')|fromjson if settings.get('workshop_name') else '' }}">
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-semibold">العملة</label>
+                            <select name="currency" class="form-select">
+                                <option value="ر.ي" {% if settings.get('currency', '')|fromjson == 'ر.ي' %}selected{% endif %}>ريال يمني (ر.ي)</option>
+                                <option value="ر.س" {% if settings.get('currency', '')|fromjson == 'ر.س' %}selected{% endif %}>ريال سعودي (ر.س)</option>
+                                <option value="د.إ" {% if settings.get('currency', '')|fromjson == 'د.إ' %}selected{% endif %}>درهم إماراتي (د.إ)</option>
+                                <option value="د.ك" {% if settings.get('currency', '')|fromjson == 'د.ك' %}selected{% endif %}>دينار كويتي (د.ك)</option>
+                                <option value="د.ب" {% if settings.get('currency', '')|fromjson == 'د.ب' %}selected{% endif %}>دينار بحريني (د.ب)</option>
+                                <option value="ر.ع" {% if settings.get('currency', '')|fromjson == 'ر.ع' %}selected{% endif %}>ريال عماني (ر.ع)</option>
+                                <option value="ج.م" {% if settings.get('currency', '')|fromjson == 'ج.م' %}selected{% endif %}>جنيه مصري (ج.م)</option>
+                                <option value="$" {% if settings.get('currency', '')|fromjson == '$' %}selected{% endif %}>دولار أمريكي ($)</option>
+                                <option value="€" {% if settings.get('currency', '')|fromjson == '€' %}selected{% endif %}>يورو (€)</option>
+                                <option value="₺" {% if settings.get('currency', '')|fromjson == '₺' %}selected{% endif %}>ليرة تركية (₺)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">هاتف الورشة</label>
                             <input type="text" name="workshop_phone" class="form-control" value="{{ settings.get('workshop_phone', '')|fromjson if settings.get('workshop_phone') else '' }}">
                         </div>

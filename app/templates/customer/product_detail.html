@@ -236,7 +236,7 @@
                     </span>
                 </div>
 
-                <div class="price-tag my-3">{{ product.price }} ر.ي</div>
+                <div class="price-tag my-3">{{ product.price }} {{ site.currency | default('ر.ي') }}</div>
 
                 <div class="my-3">
                     {% if product.is_available | default(true) %}
@@ -390,7 +390,7 @@
                         <div class="card-body">
                             <h6 class="card-title">{{ rp.name }}</h6>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span style="color:var(--warm); font-weight:900;">{{ rp.price }} ر.ي</span>
+                                <span style="color:var(--warm); font-weight:900;">{{ rp.price }} {{ site.currency | default('ر.ي') }}</span>
                                 <a href="/customer/product/{{ rp.id }}" class="btn btn-sm btn-accent">
                                     <i class="bi bi-eye"></i>
                                 </a>

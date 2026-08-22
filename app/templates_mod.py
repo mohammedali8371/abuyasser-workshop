@@ -5,6 +5,7 @@ import json
 
 templates = Jinja2Templates(directory="app/templates")
 
+_cached_currency = None
 
 def render(request: Request, name: str, context: dict = None) -> _TemplateResponse:
     ctx = context or {}
@@ -30,8 +31,13 @@ def fromjson(val: str):
     except Exception:
         return val
 
+def currency_symbol():
+    global _cached_currency
+    return _cached_currency or "ر.ي"
+
 templates.env.globals["status_arabic"] = status_arabic
 templates.env.globals["role_arabic"] = role_arabic
 templates.env.globals["stars_html"] = stars_html
 templates.env.filters["fromjson"] = fromjson
 templates.env.globals["fromjson"] = fromjson
+templates.env.globals["currency_symbol"] = currency_symbol

@@ -369,7 +369,7 @@
                                 <small class="text-muted me-1">({{ product.reviews_count | default(0) }})</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="product-price">{{ product.price }} ر.ي</span>
+                                <span class="product-price">{{ product.price }} {{ site.currency | default('ر.ي') }}</span>
                                 <a href="/customer/product/{{ product.id }}" class="btn btn-sm btn-accent">
                                     <i class="bi bi-eye"></i>
                                 </a>

@@ -1,10 +1,11 @@
 import logging
 import json
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse, PlainTextResponse
 from sqlalchemy import select
 import io
 
@@ -15,6 +16,22 @@ from app.templates_mod import templates
 logger = logging.getLogger(__name__)
 
 _bot_task = None
+_keep_alive_task = None
+
+SITE_URL = "https://abuyasser-workshop.onrender.com"
+
+
+async def _keep_alive():
+    """Self-ping every 14 minutes to prevent Render free tier from sleeping."""
+    import httpx
+    while True:
+        await asyncio.sleep(14 * 60)
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                r = await client.get(f"{SITE_URL}/health")
+                logger.info("Keep-alive ping: %s", r.status_code)
+        except Exception as e:
+            logger.warning("Keep-alive ping failed: %s", e)
 
 
 @asynccontextmanager
@@ -25,6 +42,18 @@ async def lifespan(app: FastAPI):
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            # Add new columns if they don't exist (safe migration)
+            async def _add_col(table, col, col_type):
+                try:
+                    await conn.execute(
+                        __import__('sqlalchemy').text(
+                            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {col_type}"
+                        )
+                    )
+                except Exception:
+                    pass
+            await _add_col("product_images", "image_data", "TEXT DEFAULT ''")
+            await _add_col("product_images", "sort_order", "INTEGER DEFAULT 0")
     except Exception as e:
         logger.error("DB init error: %s", e)
 
@@ -85,6 +114,7 @@ async def lifespan(app: FastAPI):
                 "login_subtitle": "",
                 "register_title": "",
                 "register_subtitle": "",
+                "currency": "ر.ي",
             }
             for key, val in defaults.items():
                 result = await db.execute(
@@ -99,6 +129,19 @@ async def lifespan(app: FastAPI):
                     db.add(SiteSetting(key=key, value=json.dumps(str(val), ensure_ascii=False)))
 
             await db.commit()
+
+        # Cache currency symbol
+        try:
+            from app.templates_mod import _cached_currency
+            cur_result = await db.execute(
+                select(SiteSetting).where(SiteSetting.key == "currency")
+            )
+            cur_setting = cur_result.scalar_one_or_none()
+            if cur_setting:
+                import app.templates_mod as tm
+                tm._cached_currency = json.loads(cur_setting.value)
+        except Exception:
+            pass
     except Exception as e:
         logger.error("Seed data error: %s", e)
 
@@ -112,7 +155,23 @@ async def lifespan(app: FastAPI):
     # except Exception as e:
     #     logger.error("Telegram bot start error: %s", e)
 
+    # Start keep-alive background task
+    global _keep_alive_task
+    try:
+        _keep_alive_task = asyncio.create_task(_keep_alive())
+        logger.info("Keep-alive task started.")
+    except Exception as e:
+        logger.error("Keep-alive start error: %s", e)
+
     yield
+
+    # Cancel keep-alive task
+    if _keep_alive_task:
+        _keep_alive_task.cancel()
+        try:
+            await _keep_alive_task
+        except asyncio.CancelledError:
+            pass
 
     try:
         from app.telegram_bot import stop_bot_polling
@@ -149,6 +208,11 @@ include_routers()
 @app.get("/")
 async def index(request: Request):
     return RedirectResponse("/customer/", status_code=302)
+
+
+@app.get("/health")
+async def health_check():
+    return PlainTextResponse("OK")
 
 
 @app.exception_handler(404)

@@ -25,6 +25,8 @@ async def _save_upload(file: UploadFile, folder: str) -> tuple:
     from app.config import settings
     ext = os.path.splitext(file.filename or "")[1] or ".jpg"
     content = await file.read()
+    if not content:
+        return "", ""
     b64_data = b64.b64encode(content).decode("utf-8")
     mime = "image/jpeg"
     if ext.lower() == ".png":
@@ -34,13 +36,16 @@ async def _save_upload(file: UploadFile, folder: str) -> tuple:
     elif ext.lower() == ".webp":
         mime = "image/webp"
     data_uri = f"data:{mime};base64,{b64_data}"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    path = os.path.join(settings.UPLOAD_DIR, folder)
-    os.makedirs(path, exist_ok=True)
-    filepath = os.path.join(path, filename)
-    with open(filepath, "wb") as f:
-        f.write(content)
-    return "/" + filepath.replace("\\", "/"), data_uri
+    try:
+        filename = f"{uuid.uuid4().hex}{ext}"
+        path = os.path.join(settings.UPLOAD_DIR, folder)
+        os.makedirs(path, exist_ok=True)
+        filepath = os.path.join(path, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        return "/" + filepath.replace("\\", "/"), data_uri
+    except Exception:
+        return "", data_uri
 
 
 def _status_arabic(status: str) -> str:
@@ -108,7 +113,10 @@ async def admin_dashboard(request: Request, user: User = Depends(get_admin), db:
 
 @router.get("/products")
 async def admin_products(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product).order_by(Product.created_at.desc()))
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(select(Product).order_by(Product.created_at.desc()).options(
+        selectinload(Product.images), selectinload(Product.category)
+    ))
     products = result.scalars().all()
     result = await db.execute(select(Category))
     categories = result.scalars().all()
@@ -118,22 +126,25 @@ async def admin_products(request: Request, user: User = Depends(get_admin), db: 
 @router.post("/products/add")
 async def admin_add_product(
     request: Request,
-    name: str = Form(...), description: str = Form(""), price: float = Form(0.0),
-    category_id: int = Form(None), is_available: bool = Form(True), stock: int = Form(0),
     user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
     form = await request.form()
+    name = form.get("name", "")
+    description = form.get("description", "")
+    price = float(form.get("price", 0) or 0)
+    category_id = form.get("category_id")
+    is_available = form.get("is_available") in ("on", "1", "true", True)
+    stock = int(form.get("stock", 0) or 0)
     image = form.get("image")
     image_path = ""
     image_data = ""
     if image and hasattr(image, "filename") and image.filename:
         image_path, image_data = await _save_upload(image, "products")
-    product = Product(
+    db.add(Product(
         name=name, description=description, price=price,
-        category_id=category_id if category_id else None,
+        category_id=int(category_id) if category_id else None,
         is_available=is_available, stock=stock, image=image_data or image_path,
-    )
-    db.add(product)
+    ))
     await db.flush()
 
     extra_images = form.getlist("extra_images")
@@ -142,26 +153,27 @@ async def admin_add_product(
             path, data = await _save_upload(img, "products")
             db.add(ProductImage(product_id=product.id, image_data=data or path, sort_order=idx))
 
+    await db.commit()
     return RedirectResponse("/mo/products", status_code=302)
 
 
 @router.post("/products/{product_id}/update")
 async def admin_update_product(
-    product_id: int, request: Request, name: str = Form(...), description: str = Form(""),
-    price: float = Form(0.0), category_id: int = Form(None),
-    is_available: bool = Form(True), stock: int = Form(0),
+    product_id: int, request: Request,
     user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if product:
-        product.name = name
-        product.description = description
-        product.price = price
-        product.category_id = category_id if category_id else None
-        product.is_available = is_available
-        product.stock = stock
         form = await request.form()
+        product.name = form.get("name", "")
+        product.description = form.get("description", "")
+        product.price = float(form.get("price", 0) or 0)
+        cat_id = form.get("category_id")
+        product.category_id = int(cat_id) if cat_id else None
+        product.is_available = form.get("is_available") in ("on", "1", "true", True)
+        product.stock = int(form.get("stock", 0) or 0)
+
         image = form.get("image")
         if image and hasattr(image, "filename") and image.filename:
             path, data = await _save_upload(image, "products")
@@ -184,6 +196,7 @@ async def admin_update_product(
                         path, data = await _save_upload(img, "products")
                         db.add(ProductImage(product_id=product.id, image_data=data or path, sort_order=max_order + idx + 1))
 
+        await db.commit()
     return RedirectResponse("/mo/products", status_code=302)
 
 
@@ -205,32 +218,39 @@ async def admin_categories(request: Request, user: User = Depends(get_admin), db
 
 @router.post("/categories/add")
 async def admin_add_category(
-    name: str = Form(...), description: str = Form(""), is_active: bool = Form(True),
-    image: UploadFile = File(None), user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
+    request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
+    form = await request.form()
+    name = form.get("name", "")
+    description = form.get("description", "")
+    is_active = form.get("is_active") in ("on", "1", "true", True)
+    image = form.get("image")
     image_path = ""
     image_data = ""
-    if image and image.filename:
+    if image and hasattr(image, "filename") and image.filename:
         image_path, image_data = await _save_upload(image, "categories")
     db.add(Category(name=name, description=description, is_active=is_active, image=image_data or image_path))
+    await db.commit()
     return RedirectResponse("/mo/categories", status_code=302)
 
 
 @router.post("/categories/{category_id}/update")
 async def admin_update_category(
-    category_id: int, name: str = Form(...), description: str = Form(""),
-    is_active: bool = Form(True), image: UploadFile = File(None),
+    category_id: int, request: Request,
     user: User = Depends(get_admin), db: AsyncSession = Depends(get_db),
 ):
+    form = await request.form()
     result = await db.execute(select(Category).where(Category.id == category_id))
     cat = result.scalar_one_or_none()
     if cat:
-        cat.name = name
-        cat.description = description
-        cat.is_active = is_active
-        if image and image.filename:
+        cat.name = form.get("name", "")
+        cat.description = form.get("description", "")
+        cat.is_active = form.get("is_active") in ("on", "1", "true", True)
+        image = form.get("image")
+        if image and hasattr(image, "filename") and image.filename:
             path, data = await _save_upload(image, "categories")
             cat.image = data or path
+        await db.commit()
     return RedirectResponse("/mo/categories", status_code=302)
 
 
@@ -396,12 +416,15 @@ async def admin_settings_page(request: Request, user: User = Depends(get_admin),
 async def admin_update_settings(request: Request, user: User = Depends(get_admin), db: AsyncSession = Depends(get_db)):
     form = await request.form()
     for key, value in form.items():
+        if key == "currency":
+            value = str(value)
         result = await db.execute(select(SiteSetting).where(SiteSetting.key == key))
         setting = result.scalar_one_or_none()
         if setting:
             setting.value = json.dumps(str(value), ensure_ascii=False)
         else:
             db.add(SiteSetting(key=key, value=json.dumps(str(value), ensure_ascii=False)))
+    await db.commit()
     return RedirectResponse("/mo/settings", status_code=302)
 
 

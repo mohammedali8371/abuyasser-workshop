@@ -35,7 +35,7 @@
                     <td>{{ loop.index }}</td>
                     <td>
                         {% if p.image %}
-                        <img src="/{{ p.image }}" alt="{{ p.name }}" class="rounded" style="width:50px; height:50px; object-fit:cover;">
+                        <img src="{% if p.image.startswith('data:') %}{{ p.image }}{% else %}/{{ p.image }}{% endif %}" alt="{{ p.name }}" class="rounded" style="width:50px; height:50px; object-fit:cover;">
                         {% else %}
                         <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
                             <i class="bi bi-image text-muted"></i>
@@ -43,8 +43,8 @@
                         {% endif %}
                     </td>
                     <td><strong>{{ p.name }}</strong></td>
-                    <td>{{ p.price }} ر.س</td>
-                    <td>{{ p.category_name if p.category_name else '—' }}</td>
+                    <td>{{ p.price }} {{ currency_symbol() }}</td>
+                    <td>{{ p.category.name if p.category else '—' }}</td>
                     <td>
                         {% if p.stock is defined %}
                         <span class="{% if p.stock <= 0 %}text-danger{% elif p.stock <= 5 %}text-warning{% endif %}">{{ p.stock }}</span>
@@ -60,7 +60,7 @@
                     <td>
                         <button class="btn btn-sm btn-outline-primary ms-1" data-bs-toggle="modal"
                             data-bs-target="#editProductModal"
-                            onclick="editProduct('{{ p.id }}','{{ p.name }}','{{ p.description|default('',true)|e }}','{{ p.price }}','{{ p.category_id|default('',true) }}','{{ p.stock|default(0,true) }}','{{ p.is_available|default(true,true) }}','/{{ p.image|default('',true) }}', '{{ p.images|map(attribute='image_data')|list|tojson|e }}')"
+                            onclick="editProduct('{{ p.id }}','{{ p.name }}','{{ p.description|default('',true)|e }}','{{ p.price }}','{{ p.category_id|default('',true) }}','{{ p.stock|default(0,true) }}','{{ p.is_available|default(true,true) }}','{{ p.image|default('',true) }}', '{{ p.images|map(attribute='image_data')|list|tojson|e }}')"
                             title="تعديل">
                             <i class="bi bi-pencil"></i>
                         </button>
