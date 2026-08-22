@@ -61,17 +61,21 @@ async def _get_user(request: Request, db: AsyncSession):
 @router.get("/")
 async def customer_home(request: Request, db: AsyncSession = Depends(get_db)):
     from sqlalchemy.orm import selectinload
-    products_q = await db.execute(select(Product).where(Product.is_available == True).order_by(Product.created_at.desc()).limit(12))
-    products = products_q.scalars().all()
-    categories_q = await db.execute(select(Category).where(Category.is_active == True))
+    from collections import OrderedDict
+    categories_q = await db.execute(select(Category).where(Category.is_active == True).order_by(Category.id))
     categories = categories_q.scalars().all()
+    products_q = await db.execute(select(Product).where(Product.is_available == True).options(selectinload(Product.images)).order_by(Product.created_at.desc()))
+    all_products = products_q.scalars().all()
+    cat_products = OrderedDict()
+    for cat in categories:
+        cat_products[cat] = [p for p in all_products if p.category_id == cat.id]
     site = await _get_site_settings(db)
     user = await _get_user(request, db)
     payment_q = await db.execute(select(PaymentMethod).where(PaymentMethod.is_active == True).order_by(PaymentMethod.sort_order))
     payment_methods = payment_q.scalars().all()
     banners_q = await db.execute(select(BannerImage).where(BannerImage.is_active == True).order_by(BannerImage.sort_order, BannerImage.id))
     banners = banners_q.scalars().all()
-    return render(request, "customer/index.html", {"products": products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods, "banners": banners})
+    return render(request, "customer/index.html", {"cat_products": cat_products, "categories": categories, "site": site, "user": user, "payment_methods": payment_methods, "banners": banners})
 
 
 

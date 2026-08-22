@@ -339,14 +339,16 @@
     </section>
     {% endif %}
 
+    {% for cat, cat_items in cat_products.items() %}
+    {% if cat_items %}
     <section class="py-5">
         <div class="container">
             <div class="text-center">
-                <h2 class="section-title anim-fade-up">{{ site.products_title | default('منتجات مميزة') }}</h2>
-                <p class="section-subtitle anim-fade-up delay-2">{{ site.products_subtitle | default('أحدث وأفضل المنتجات المتاحة') }}</p>
+                <h2 class="section-title anim-fade-up">{{ cat.name }}</h2>
+                <p class="section-subtitle anim-fade-up delay-2">منتجات قسم {{ cat.name }}</p>
             </div>
             <div class="row g-4">
-                {% for product in products %}
+                {% for product in cat_items[:8] %}
                 <div class="col-sm-6 col-lg-4 col-xl-3">
                     <div class="product-card card anim-fade-up">
                         {% if product.image %}
@@ -377,23 +379,20 @@
                         </div>
                     </div>
                 </div>
-                {% else %}
-                <div class="col-12 text-center py-5">
-                    <i class="bi bi-box-seam text-muted" style="font-size:4rem;"></i>
-                    <p class="text-muted mt-3">لا توجد منتجات حالياً</p>
-                </div>
                 {% endfor %}
             </div>
-            {% if products | length >= 8 %}
-            <div class="text-center mt-5">
-                <a href="/customer/products" class="btn btn-warm">
-                    عرض جميع المنتجات
+            {% if cat_items | length > 8 %}
+            <div class="text-center mt-4">
+                <a href="/customer/products?category={{ cat.id }}" class="btn btn-warm">
+                    عرض جميع منتجات {{ cat.name }}
                     <i class="bi bi-arrow-left ms-2"></i>
                 </a>
             </div>
             {% endif %}
         </div>
     </section>
+    {% endif %}
+    {% endfor %}
 
     <section class="py-5">
         <div class="container">
